@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from sqlalchemy import delete
 
 from app.config import get_settings
-from app.db import create_all, init_engine
+from app.db import create_all, dispose_engine, init_engine
 from app import models  # noqa: F401  (registers tables with Base.metadata)
 from app.routes import events as events_routes
 from app.routes import rooms as rooms_routes
@@ -24,6 +24,11 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         sweep_task.cancel()
+        try:
+            await sweep_task
+        except asyncio.CancelledError:
+            pass
+        await dispose_engine()
 
 
 async def _sweep_loop() -> None:

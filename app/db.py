@@ -34,6 +34,17 @@ async def create_all() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
 
+async def dispose_engine() -> None:
+    global _engine, _sessionmaker
+    if _engine is not None:
+        engine = _engine
+        _engine = None
+        _sessionmaker = None
+        # Use the sync dispose to avoid CancelledError from aiosqlite's
+        # asyncio.shield(terminate()) when the event loop is shutting down.
+        engine.sync_engine.dispose()
+
+
 async def get_session() -> AsyncIterator[AsyncSession]:
     assert _sessionmaker is not None
     async with _sessionmaker() as session:

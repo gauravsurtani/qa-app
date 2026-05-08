@@ -13,6 +13,16 @@ def _env(monkeypatch, tmp_path):
     monkeypatch.setenv("EMAIL_API_KEY", "test-key")
     from app.config import get_settings
     get_settings.cache_clear()
+    try:
+        import app.routes.questions as _q
+        _q._question_limiter = None
+    except ImportError:
+        pass
+    try:
+        import app.routes.upvotes as _u
+        _u._upvote_limiter = None
+    except ImportError:
+        pass
 
 
 @pytest_asyncio.fixture
