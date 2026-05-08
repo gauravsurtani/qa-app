@@ -12,7 +12,9 @@ A live Q&A web app for presenters. Audience scans a QR code on the speaker's scr
 
 Think Slido — minimum-friction, no accounts, deploy-once. Branded as DeepLearning.AI.
 
-**Out of scope for v1:** spam filtering, profanity filter, CAPTCHA, analytics dashboard, CSV export, multi-presenter roles, threaded replies, emoji reactions, question editing by author, persistent presenter accounts, mobile/native apps.
+**Post-session:** Presenter can download a CSV of all questions anytime (during or after the session) from the dashboard. Optionally, a presenter can enter an email at room creation and receive a CSV + permalink automatically when the session ends. Email is collected for that single purpose only — no marketing, no analytics, no third-party sharing.
+
+**Out of scope for v1:** spam filtering, profanity filter, CAPTCHA, analytics dashboard, multi-presenter roles, threaded replies, emoji reactions, question editing by author, persistent presenter accounts, mobile/native apps.
 
 ---
 
@@ -28,6 +30,7 @@ Think Slido — minimum-friction, no accounts, deploy-once. Branded as DeepLearn
 | Tech stack | FastAPI + Jinja2 + HTMX + SQLite + Server-Sent Events. One service. |
 | Deployment | Railway, Dockerfile-based, persistent volume for SQLite. |
 | Branding | DeepLearning.AI — coral primary (`#F65B66`), Inter font, slate neutrals. |
+| Post-session data | CSV export (always available via dashboard button); optional email-on-close (presenter opts in by entering email at room creation). Email never used for anything other than sending Q&A archive. |
 
 ---
 
@@ -79,15 +82,16 @@ Four tables. SQLite, normalized except for one denormalized counter for sort spe
 │ code         (unique)   │         │ room_id         (fk)         │
 │ presenter_token         │         │ participant_id  (fk)         │
 │ title                   │         │ author_name     (snapshot)   │
-│ created_at              │         │ text                         │
-│ last_activity_at        │         │ state    (live|pinned|       │
-│ expires_at              │         │           answered|hidden)   │
-│ status                  │         │ starred         (bool)       │
-└───────┬─────────────────┘         │ upvote_count    (denorm)     │
-        │                           │ created_at                   │
-        │1                          └──────────┬───────────────────┘
-        │                                      │1
-        │ *                                    │ *
+│ presenter_email (null)  │         │ text                         │
+│ created_at              │         │ state    (live|pinned|       │
+│ last_activity_at        │         │           answered|hidden)   │
+│ expires_at              │         │ starred         (bool)       │
+│ status                  │         │ upvote_count    (denorm)     │
+│ closed_at  (nullable)   │         │ created_at                   │
+│ email_sent_at (nullable)│         └──────────┬───────────────────┘
+└───────┬─────────────────┘                    │1
+        │1                                     │ *
+        │ *                                    │
 ┌───────▼─────────────────┐           ┌────────▼─────────────┐
 │ participants            │           │ upvotes              │
 ├─────────────────────────┤           ├──────────────────────┤
@@ -107,6 +111,9 @@ Four tables. SQLite, normalized except for one denormalized counter for sort spe
 | `rooms.presenter_token` | 32-byte URL-safe random (`secrets.token_urlsafe(32)`). |
 | `rooms.status` | `active` / `closed` (set when presenter ends session). Closed rooms reject new questions/upvotes but stay readable until `expires_at`. |
 | `rooms.expires_at` | Computed as `last_activity_at + 24h`. Cron sweep (every 10 min) hard-deletes rows past this and cascades to questions/upvotes/participants. When status flips to `closed`, `last_activity_at` is frozen — so a closed room is auto-deleted exactly 24h after closure. An idle (never-closed) active room is also deleted 24h after last write. |
+| `rooms.presenter_email` | Optional. Validated on entry (RFC 5322-lite). Used **only** to send the post-session email. Never logged in plaintext, never used for marketing, never shared. Stored alongside the room and deleted when the room is deleted (24h after close). |
+| `rooms.closed_at` | Timestamp set when presenter ends the session. Drives the email-send job and used as the user-facing "session ended at" display. |
+| `rooms.email_sent_at` | Timestamp of successful CSV email delivery. Null until sent. Used to ensure the email is sent at most once per room (idempotent retry on transient failure). |
 | `participants.session_id` | HTTP-only cookie value. Persists name and upvote dedup across page refreshes. Per-room scope. |
 | `questions.author_name` | Snapshot at write time. If participant later renames, prior questions retain original attribution. |
 | `questions.state` | Single enum, mutually exclusive (`live`, `pinned`, `answered`, `hidden`). Only one question per room can be `pinned`. |
@@ -127,12 +134,16 @@ Four tables. SQLite, normalized except for one denormalized counter for sort spe
 
 ```
 [1] HOMEPAGE — GET /
-    Visitor sees "Live Q&A for your talk" hero with optional title input
-    and primary "Start a session →" button.
+    Visitor sees "Live Q&A for your talk" hero with:
+      • optional Title input
+      • optional Email input ("send me a copy when the session ends")
+        with helper microcopy: "We only use this to email your Q&A
+         archive. No marketing, no sharing."
+      • primary "Start a session →" button
 
-[2] CREATE ROOM — POST /rooms { title? }
-    Server generates code + token, inserts row, redirects to:
-    /r/{code}/host?t={token}
+[2] CREATE ROOM — POST /rooms { title?, presenter_email? }
+    Server validates email format if present, generates code + token,
+    inserts row, redirects to: /r/{code}/host?t={token}
 
 [3] PRESENTER DASHBOARD (first load — share screen)
     Shows: QR code (image of audience URL), 6-char room code, copyable
@@ -145,10 +156,55 @@ Four tables. SQLite, normalized except for one denormalized counter for sort spe
 [5] DASHBOARD DURING THE TALK — split-pane layout
     Left: ANSWERING NOW + stats. Right: Live queue with action buttons
     (Pin / Answer / Hide / Star). Updates via SSE as audience submits.
+    Header has "Download CSV" button — works anytime (during or after).
 
 [6] END SESSION — confirmation modal → status = closed
     Audience sees "This Q&A has ended. Thanks!" Read-only for 24h.
+    If presenter provided an email, an async job sends:
+      • subject: "Your Q&A session '<title>' has ended"
+      • body: stats summary + link back to read-only room
+      • attachment: questions.csv
+    On success, email_sent_at is stamped. On failure, retried up to
+    3 times with exponential backoff; surfaced as banner on the
+    closed room view ("Email failed to send. Download CSV manually.").
 ```
+
+### 5.4 CSV export
+
+```
+GET /r/{code}/export.csv  (presenter-only, requires valid token)
+
+Response: text/csv; Content-Disposition: attachment;
+          filename="qa-{code}-{YYYY-MM-DD}.csv"
+
+Columns:
+  question_id, author_name, text, state, starred,
+  upvote_count, created_at, room_title, room_code
+```
+
+Available at any time — during a live session (snapshot of current state) or after close (final archive). One-line CSV per question. UTF-8 with BOM so Excel opens it correctly.
+
+### 5.5 Email-on-close (server-side job)
+
+```
+trigger: POST /r/{code}/end (presenter ends session)
+            ↓
+        update rooms.status='closed', closed_at=now()
+            ↓
+        if rooms.presenter_email is not null and email_sent_at is null:
+            enqueue email job (background task in same process)
+            ↓
+        email job:
+            • render CSV from DB
+            • render HTML email (Jinja template, brand-styled)
+            • POST to email provider API (Resend default)
+            • on 2xx: stamp email_sent_at = now()
+            • on failure: log + retry (3 attempts, 2s/8s/32s backoff)
+            • on final failure: leave email_sent_at null;
+              presenter sees banner on closed-room view
+```
+
+The email itself is brand-styled to match the app — coral header, Inter font, footer "Made with ♥ from Gaurav & DeepLearning.AI", and a privacy line: *"We're emailing you because you asked us to. We won't use your address for anything else."*
 
 ### 5.2 Audience journey
 
@@ -486,6 +542,10 @@ No Redis, no pub/sub. One Python process, single worker. If process restarts, cl
 | Two presenters open simultaneously | Both see same state via SSE; last action wins |
 | Hidden by mistake | "Hidden" tab allows un-hide |
 | DB write fails | 500; generic toast "couldn't save — try again" |
+| Invalid email format at room creation | 422; inline error "Please enter a valid email or leave blank" |
+| Email provider API down / rate limited | Retry 3x with backoff; on final failure, log + show banner on closed-room view: "Couldn't email your archive. Download the CSV here." |
+| Email job runs after room data is gone | Should not happen (email job runs synchronously after close, before 24h sweep). Defensive check: if room is missing when job runs, silently abort. |
+| Presenter wants to remove their email | Not possible in v1 (no edit). Email is deleted with the room 24h after close. Documented in privacy notice. |
 
 **Explicitly NOT in v1:**
 - Spam / profanity filter
@@ -511,12 +571,15 @@ qa-app/
 │   │   ├── rooms.py             # POST /rooms, room state, end session
 │   │   ├── questions.py         # POST/PATCH/DELETE on questions
 │   │   ├── upvotes.py           # POST/DELETE upvote
-│   │   └── events.py            # GET /r/{code}/events (SSE)
+│   │   ├── events.py            # GET /r/{code}/events (SSE)
+│   │   └── export.py            # GET /r/{code}/export.csv
 │   ├── services/
 │   │   ├── rooms.py             # business logic (create/expire/close)
 │   │   ├── questions.py         # state transitions, validation
 │   │   ├── pubsub.py            # in-memory room → queue fanout
-│   │   └── ratelimit.py         # token bucket per (room, participant)
+│   │   ├── ratelimit.py         # token bucket per (room, participant)
+│   │   ├── csv_export.py        # CSV streaming for /export.csv
+│   │   └── email.py             # provider client (Resend), retry, idempotency
 │   ├── auth.py                  # presenter token + audience cookie
 │   └── utils/
 │       ├── codes.py             # 6-char room code generator (no 0/O/1/l/I)
@@ -607,6 +670,10 @@ Three critical flows only:
 │   • LOG_LEVEL=INFO                           │
 │   • SESSION_SECRET (32-byte random)          │
 │   • ROOM_TTL_HOURS=24                        │
+│   • EMAIL_PROVIDER=resend                    │
+│   • EMAIL_API_KEY (Resend API key)           │
+│   • EMAIL_FROM_ADDRESS=qa@dlai.app           │
+│   • EMAIL_FROM_NAME="DLAI Q&A"               │
 │                                              │
 │  Healthcheck: GET /healthz                   │
 └──────────────────────────────────────────────┘
@@ -668,7 +735,7 @@ volumePath = "/data"
 These are intentionally deferred. Each can be added without a rewrite:
 
 - Persistent presenter accounts / session history
-- CSV / JSON export of questions
+- JSON export (CSV is the only export format in v1)
 - Spam, profanity, abuse filters
 - CAPTCHA / bot detection
 - Multi-presenter roles & permissions
@@ -691,3 +758,5 @@ These don't block design approval but should be decided in the first plan step:
 2. **Room code generator collision rate** — 6 chars × 32-char alphabet = ~10⁹ codes. At 1000 active rooms, collision probability negligible. Retry on collision (rare), max 3 attempts.
 3. **Initial migrations approach** — Alembic vs `metadata.create_all()`. Default: `create_all()` for v1 simplicity, switch to Alembic before v1.1.
 4. **QR library specifics** — `qrcode` Python lib for SVG, custom CSS for brand styling. Need to verify SVG output supports per-module CSS classes.
+5. **Email provider choice** — Default is **Resend** (cleanest API, generous free tier — 3,000 emails/mo, simple SDK). Alternatives: Postmark, SendGrid, AWS SES. Decide before plan step that wires email.py.
+6. **Email job execution model** — FastAPI `BackgroundTasks` (in-process, simplest) vs APScheduler (more robust retry). Default: BackgroundTasks for v1; if delivery reliability matters, swap to APScheduler with persisted job state.
