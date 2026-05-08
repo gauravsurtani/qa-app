@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; color: #0F172A; max-width: 600px; margin: 0 auto;">
+  <div style="background: #F65B66; color: white; padding: 24px;">
+    <h1 style="margin: 0; font-size: 20px;">Your Q&amp;A session has ended</h1>
+  </div>
+  <div style="padding: 24px;">
+    <p>Hi,</p>
+    <p>Your session <strong>{{ title or 'Q&A' }}</strong> just wrapped up.</p>
+    <ul style="line-height: 1.8;">
+      <li>Total questions: <strong>{{ stats.total }}</strong></li>
+      <li>Total upvotes: <strong>{{ stats.upvotes }}</strong></li>
+      <li>Participants: <strong>{{ stats.participants }}</strong></li>
+    </ul>
+    <p>The full Q&amp;A archive is attached as a CSV. You can also revisit the room
+       (read-only) for the next 24 hours: <a href="{{ permalink }}">{{ permalink }}</a></p>
+    <p style="font-size: 13px; color: #64748B; margin-top: 32px;">
+      We're emailing you because you asked us to. We won't use your address for anything else.
+    </p>
+  </div>
+  <div style="text-align: center; padding: 24px; color: #64748B; font-size: 13px;">
+    Made with <span style="color: #F65B66;">♥</span> from Gaurav &amp; DeepLearning.AI
+  </div>
+</body>
+</html>
