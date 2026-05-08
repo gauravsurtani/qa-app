@@ -1,8 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import delete
 
 from app.config import get_settings
@@ -47,6 +50,12 @@ async def _sweep_loop() -> None:
 
 
 app = FastAPI(title="qa-app", lifespan=lifespan)
+
+_BASE = Path(__file__).resolve().parent.parent
+app.mount("/static", StaticFiles(directory=_BASE / "static"), name="static")
+templates = Jinja2Templates(directory=_BASE / "templates")
+app.state.templates = templates
+
 app.include_router(rooms_routes.router)
 app.include_router(questions_routes.router)
 app.include_router(upvotes_routes.router)

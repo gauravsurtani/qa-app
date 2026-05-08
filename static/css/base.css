@@ -1,0 +1,106 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  color: var(--slate-900);
+  background: var(--slate-100);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--dlai-teal); text-decoration: none; }
+a:hover { color: var(--dlai-teal-light); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 120ms var(--easing-in), transform 120ms var(--easing-in);
+}
+button:active { transform: translateY(1px); }
+button:focus-visible {
+  outline: 2px solid var(--dlai-coral);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--dlai-coral);
+  color: white;
+}
+.btn-primary:hover { background: var(--dlai-coral-deep); }
+
+.btn-secondary {
+  background: white;
+  border: 1px solid var(--slate-200);
+  color: var(--slate-900);
+}
+.btn-secondary:hover { background: var(--slate-50); }
+
+input, textarea {
+  font-family: inherit;
+  font-size: 15px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  width: 100%;
+  background: white;
+  color: var(--slate-900);
+  transition: border-color 140ms var(--easing-in), box-shadow 140ms var(--easing-in);
+}
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--dlai-coral);
+  box-shadow: 0 0 0 2px var(--dlai-coral-bg);
+}
+input::placeholder, textarea::placeholder { color: var(--slate-400); }
+
+.app-header {
+  background: var(--dlai-coral);
+  color: white;
+  padding: 0 16px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.app-header h1 { font-size: 17px; font-weight: 600; margin: 0; }
+
+@media (min-width: 1024px) {
+  .app-header { height: 64px; padding: 0 24px; }
+  .app-header h1 { font-size: 18px; }
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.muted { color: var(--slate-500); }
+
+.app-footer {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--slate-500);
+  font-size: 13px;
+}
+.app-footer .heart {
+  color: var(--dlai-coral);
+  display: inline-block;
+  animation: heartbeat 1.5s var(--easing-in) infinite;
+}
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.app-footer .links { margin-top: 8px; }
+.app-footer .links a { color: var(--slate-500); margin: 0 6px; }

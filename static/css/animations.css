@@ -1,0 +1,36 @@
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 100ms !important;
+    transition-duration: 100ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@keyframes slide-in-top {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+.q-card-new {
+  animation: slide-in-top 280ms var(--easing-in);
+  border-left: 3px solid var(--dlai-coral);
+}
+
+@keyframes upvote-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.upvote-active { animation: upvote-pulse 220ms var(--easing-in); }
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--slate-100) 0%, var(--slate-200) 50%, var(--slate-100) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}

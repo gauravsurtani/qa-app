@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}DLAI Q&A{% endblock %}</title>
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/animations.css">
+  <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+  {% block footer %}
+  <footer class="app-footer">
+    <div>Made with <span class="heart">♥</span> from Gaurav &amp; DeepLearning.AI</div>
+    <div class="links">
+      <a href="#">GitHub</a> · <a href="#">Privacy</a> · v0.1.0
+    </div>
+  </footer>
+  {% endblock %}
+</body>
+</html>
