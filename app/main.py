@@ -6,10 +6,10 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 
 from app.config import get_settings
-from app.db import create_all, dispose_engine, init_engine
+from app.db import create_all, dispose_engine, get_sessionmaker, init_engine
 from app import models  # noqa: F401  (registers tables with Base.metadata)
 from app.routes import events as events_routes
 from app.routes import export as export_routes
@@ -37,7 +37,6 @@ async def lifespan(app: FastAPI):
 
 
 async def _sweep_loop() -> None:
-    from app.db import get_sessionmaker
     while True:
         try:
             sm = get_sessionmaker()
@@ -68,4 +67,7 @@ app.include_router(export_routes.router)
 
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
+    sm = get_sessionmaker()
+    async with sm() as s:
+        await s.execute(text("SELECT 1"))
     return {"status": "ok"}
