@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_or_create_session_id, get_room_by_code
+from app.auth import constant_time_eq, get_or_create_session_id, get_room_by_code
+from app.config import get_settings
 from app.db import get_session
 from app.models import Participant, Question, QuestionState, RoomStatus, Upvote
+from app.utils.qr import generate_qr_svg
 
 router = APIRouter()
 
@@ -68,4 +70,64 @@ async def audience_view(
             "my_upvotes": my_upvotes,
             "my_question_ids": my_question_ids,
         },
+    )
+
+
+@router.get("/r/{code}/host", response_class=HTMLResponse)
+async def presenter_view(
+    code: str,
+    request: Request,
+    t: str | None = None,
+    v: str | None = None,
+    db: AsyncSession = Depends(get_session),
+):
+    room = await get_room_by_code(code, db)
+    if not t or not constant_time_eq(t, room.presenter_token):
+        return RedirectResponse(f"/r/{code}", status_code=303)
+
+    base = get_settings().app_base_url.rstrip("/")
+    audience_url = f"{base}/r/{room.code}"
+
+    q_result = await db.execute(
+        select(Question)
+        .where(Question.room_id == room.id)
+        .order_by(Question.upvote_count.desc(), Question.created_at.desc())
+    )
+    questions = q_result.scalars().all()
+
+    if not questions and v != "live":
+        return request.app.state.templates.TemplateResponse(
+            request,
+            "presenter_share.html",
+            {
+                "room": room,
+                "token": t,
+                "audience_url": audience_url,
+                "qr_svg": generate_qr_svg(audience_url),
+            },
+        )
+
+    return request.app.state.templates.TemplateResponse(
+        request,
+        "presenter.html",
+        {"room": room, "token": t, "questions": questions},
+    )
+
+
+@router.get("/r/{code}/host/qr", response_class=HTMLResponse)
+async def fullscreen_qr(
+    code: str,
+    request: Request,
+    t: str | None = None,
+    db: AsyncSession = Depends(get_session),
+):
+    room = await get_room_by_code(code, db)
+    if not t or not constant_time_eq(t, room.presenter_token):
+        return RedirectResponse(f"/r/{code}", status_code=303)
+    base = get_settings().app_base_url.rstrip("/")
+    audience_url = f"{base}/r/{room.code}"
+    return request.app.state.templates.TemplateResponse(
+        request,
+        "fullscreen_qr.html",
+        {"room": room, "audience_url": audience_url, "qr_svg": generate_qr_svg(audience_url, scale=14)},
     )

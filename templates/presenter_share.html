@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Share — {{ room.title or "Q&A" }} — DLAI{% endblock %}
+{% block body %}
+<header class="app-header">
+  <h1>{{ room.title or "Live Q&A" }}</h1>
+</header>
+<main style="max-width: 720px; margin: 32px auto; padding: 0 16px;">
+  <h2 style="margin: 0 0 16px;">Share with your audience</h2>
+  <div style="display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 32px; align-items: start;">
+    <div class="card" style="padding: 20px;">
+      {{ qr_svg|safe }}
+    </div>
+    <div>
+      <div style="font-size: 13px; color: var(--slate-500); margin-bottom: 4px;">Room code</div>
+      <div style="font-family: 'SF Mono', monospace; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: var(--dlai-coral); margin-bottom: 16px;">
+        {{ room.code }}
+      </div>
+      <div style="font-size: 13px; color: var(--slate-500); margin-bottom: 4px;">Direct link</div>
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input type="text" value="{{ audience_url }}" readonly id="aud-url">
+        <button class="btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('aud-url').value)">Copy</button>
+      </div>
+      <a href="/r/{{ room.code }}/host/qr?t={{ token }}" class="btn-secondary" style="display: inline-block; padding: 10px 16px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); color: var(--slate-900);">
+        ⛶ Show fullscreen QR
+      </a>
+    </div>
+  </div>
+  <p class="muted" style="margin-top: 24px;">
+    Bookmark this page — it's your only way back as presenter. Anyone with this URL becomes the host.
+  </p>
+  <div style="margin-top: 32px; padding: 16px; background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); text-align: center;">
+    <p class="muted">Waiting for first question…</p>
+    <a href="/r/{{ room.code }}/host?t={{ token }}&v=live" style="color: var(--dlai-teal);">Switch to live dashboard →</a>
+  </div>
+</main>
+{% endblock %}

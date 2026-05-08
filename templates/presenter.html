@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Presenter — {{ room.title or "Q&A" }} — DLAI{% endblock %}
+{% block body %}
+<header class="app-header">
+  <h1>{{ room.title or "Live Q&A" }}</h1>
+  <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+    <a href="/r/{{ room.code }}/host/qr?t={{ token }}" style="color: white; opacity: 0.85;">QR ⊞</a>
+    <a href="/r/{{ room.code }}/export.csv?t={{ token }}" style="color: white; opacity: 0.85;">Download CSV</a>
+    <button class="btn-secondary" onclick="endSession()">End session</button>
+  </div>
+</header>
+
+<main style="display: grid; grid-template-columns: 320px 1fr; gap: 24px; padding: 24px; max-width: 1280px; margin: 0 auto;">
+  <aside>
+    <h2 style="font-size: 14px; text-transform: uppercase; color: var(--slate-500); margin: 0 0 8px;">Answering now</h2>
+    <div id="pinned-slot" class="card" style="min-height: 120px;">
+      <p class="muted" style="margin: 0;">Pin a question to highlight it here.</p>
+    </div>
+  </aside>
+  <section>
+    <h2 style="font-size: 14px; text-transform: uppercase; color: var(--slate-500); margin: 0 0 8px;">Question queue</h2>
+    <div id="questions-list">
+      {% for q in questions %}
+        <article class="q-card" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
+                 style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 48px; padding: 8px 0; text-align: center; color: var(--slate-700); border: 1px solid var(--slate-200); border-radius: var(--radius-sm);">
+              <div style="font-size: 12px;">▲</div>
+              <div class="upvote-count" style="font-size: 14px; font-weight: 600;">{{ q.upvote_count }}</div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <p style="margin: 0 0 6px; line-height: 1.45;">{{ q.text }}</p>
+              <div class="muted" style="font-size: 12px;">— {{ q.author_name }}</div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <button class="btn-secondary action-btn" data-act="state" data-val="pinned" data-id="{{ q.id }}">📌 Pin</button>
+                <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="{{ q.id }}">✓ Answered</button>
+                <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="{{ q.id }}">⊘ Hide</button>
+                <button class="btn-secondary action-btn" data-act="starred" data-val="toggle" data-id="{{ q.id }}">⭐ Star</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+
+<script>
+window.ROOM_CODE = {{ room.code|tojson }};
+window.PRESENTER_TOKEN = {{ token|tojson }};
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.action-btn');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const body = {};
+  if (btn.dataset.act === 'state') body.state = btn.dataset.val;
+  if (btn.dataset.act === 'starred') {
+    const card = document.getElementById('q-' + id);
+    body.starred = !card.dataset.starred || card.dataset.starred === 'false';
+  }
+  await fetch(`/r/${window.ROOM_CODE}/questions/${id}?t=${window.PRESENTER_TOKEN}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+});
+
+async function endSession() {
+  if (!confirm("End this session? Audience won't be able to ask new questions.")) return;
+  await fetch(`/r/${window.ROOM_CODE}/end?t=${window.PRESENTER_TOKEN}`, { method: 'POST' });
+  alert('Session ended.');
+}
+</script>
+<script src="/static/js/sse.js" defer></script>
+{% endblock %}
