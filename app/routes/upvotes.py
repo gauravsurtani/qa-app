@@ -13,6 +13,7 @@ from app.auth import (
 from app.config import get_settings
 from app.db import get_session
 from app.models import Question, Upvote
+from app.services.pubsub import pubsub
 from app.routes.questions import _ensure_room_writable
 from app.services.ratelimit import RateLimiter
 
@@ -69,4 +70,8 @@ async def upvote(
             return {"upvotes": q.upvote_count, "upvoted": True}
 
     await db.commit()
+    await pubsub.publish(
+        room.id,
+        {"type": "question.upvoted", "data": {"id": q.id, "upvotes": q.upvote_count}},
+    )
     return {"upvotes": q.upvote_count, "upvoted": upvoted}

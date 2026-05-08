@@ -27,6 +27,7 @@ dev = [
   "ruff>=0.7",
   "mypy>=1.13",
   "playwright>=1.48",
+  "pytest-timeout>=2.3",
 ]
 
 [tool.pytest.ini_options]

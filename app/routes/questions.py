@@ -21,6 +21,7 @@ from app.schemas import (
     QuestionDTO,
     QuestionPatchRequest,
 )
+from app.services.pubsub import pubsub
 from app.services.questions import set_question_starred, set_question_state
 from app.services.ratelimit import RateLimiter
 from app.services.rooms import touch_room
@@ -98,6 +99,13 @@ async def create_question(
     await touch_room(db, room)
     await db.commit()
     await db.refresh(q)
+    await pubsub.publish(
+        room.id,
+        {
+            "type": "question.created",
+            "data": QuestionDTO.model_validate(q).model_dump(mode="json"),
+        },
+    )
     return QuestionDTO.model_validate(q)
 
 
@@ -121,4 +129,8 @@ async def patch_question(
     await touch_room(db, room)
     await db.commit()
     await db.refresh(q)
+    await pubsub.publish(
+        room.id,
+        {"type": "question.state_changed", "data": {"id": q.id, "state": q.state.value if hasattr(q.state, "value") else q.state, "starred": q.starred}},
+    )
     return QuestionDTO.model_validate(q)

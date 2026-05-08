@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import require_presenter
 from app.config import get_settings
 from app.db import get_session
+from app.services.pubsub import pubsub
 from app.models import Room
 from app.schemas import RoomCreateRequest, RoomCreateResponse
 from app.services.rooms import close_room, create_room
@@ -40,4 +41,8 @@ async def end_session(
         raise HTTPException(status.HTTP_409_CONFLICT, "Room already closed")
     await close_room(db, room)
     await db.commit()
+    await pubsub.publish(
+        room.id,
+        {"type": "room.closed", "data": {"reason": "presenter_ended"}},
+    )
     return {"status": "closed"}
