@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}DLAI Q&A — Live questions for your talk{% endblock %}
+{% block body %}
+<main style="max-width: 560px; margin: 64px auto; padding: 0 16px;">
+  <h1 style="font-size: 32px; margin: 0 0 8px; color: var(--slate-900);">
+    Live Q&amp;A for your talk
+  </h1>
+  <p class="muted" style="font-size: 17px; margin: 0 0 32px;">
+    No accounts. No setup. Just share a QR code.
+  </p>
+
+  <form id="start-form" style="display: grid; gap: 12px;">
+    <label>
+      <div style="font-size: 13px; color: var(--slate-700); margin-bottom: 4px;">
+        Session title <span class="muted">(optional)</span>
+      </div>
+      <input type="text" name="title" maxlength="80" placeholder="e.g. AI Talks 2026">
+    </label>
+    <label>
+      <div style="font-size: 13px; color: var(--slate-700); margin-bottom: 4px;">
+        Email me a copy when the session ends <span class="muted">(optional)</span>
+      </div>
+      <input type="email" name="presenter_email" placeholder="you@example.com">
+      <div style="font-size: 12px; color: var(--slate-500); margin-top: 4px;">
+        We only use this to email your Q&amp;A archive. No marketing, no sharing.
+      </div>
+    </label>
+    <button type="submit" class="btn-primary" style="margin-top: 8px;">
+      Start a session →
+    </button>
+    <div id="form-error" style="color: var(--dlai-coral-deep); font-size: 14px;"></div>
+  </form>
+
+  <p class="muted" style="margin-top: 24px; font-size: 14px;">
+    Have a code? <a href="/join">Join here →</a>
+  </p>
+</main>
+
+<script>
+document.getElementById('start-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const body = {
+    title: f.title.value || null,
+    presenter_email: f.presenter_email.value || null,
+  };
+  for (const k of Object.keys(body)) if (body[k] === null || body[k] === '') delete body[k];
+  const r = await fetch('/rooms', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    document.getElementById('form-error').textContent =
+      r.status === 422 ? 'Please enter a valid email or leave it blank.' : 'Could not create session.';
+    return;
+  }
+  const data = await r.json();
+  window.location.href = data.presenter_url.replace(window.location.origin, '');
+});
+</script>
+{% endblock %}

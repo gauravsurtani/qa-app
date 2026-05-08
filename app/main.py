@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.db import create_all, dispose_engine, init_engine
 from app import models  # noqa: F401  (registers tables with Base.metadata)
 from app.routes import events as events_routes
+from app.routes import pages as pages_routes
 from app.routes import rooms as rooms_routes
 from app.routes import questions as questions_routes
 from app.routes import upvotes as upvotes_routes
@@ -56,6 +57,7 @@ app.mount("/static", StaticFiles(directory=_BASE / "static"), name="static")
 templates = Jinja2Templates(directory=_BASE / "templates")
 app.state.templates = templates
 
+app.include_router(pages_routes.router)
 app.include_router(rooms_routes.router)
 app.include_router(questions_routes.router)
 app.include_router(upvotes_routes.router)
