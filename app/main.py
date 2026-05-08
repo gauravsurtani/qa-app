@@ -2,11 +2,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import get_settings
+from app.db import create_all, init_engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_settings()
+    init_engine()
+    await create_all()
     yield
 
 
