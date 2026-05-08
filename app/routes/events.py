@@ -27,11 +27,21 @@ async def events(
     async def stream() -> AsyncIterator[bytes]:
         async with pubsub.subscribe(room.id) as q:
             yield _format_sse("connected", {"room_id": room.id})
-            while True:
-                try:
-                    event = await asyncio.wait_for(q.get(), timeout=20.0)
-                    yield _format_sse(event["type"], event["data"])
-                except asyncio.TimeoutError:
-                    yield _format_sse("ping", {})
+            count = await pubsub.subscriber_count(room.id)
+            await pubsub.publish(
+                room.id, {"type": "audience.count", "data": {"count": count}}
+            )
+            try:
+                while True:
+                    try:
+                        event = await asyncio.wait_for(q.get(), timeout=20.0)
+                        yield _format_sse(event["type"], event["data"])
+                    except asyncio.TimeoutError:
+                        yield _format_sse("ping", {})
+            finally:
+                count_after = await pubsub.subscriber_count(room.id) - 1
+                await pubsub.publish(
+                    room.id, {"type": "audience.count", "data": {"count": max(0, count_after)}}
+                )
 
     return StreamingResponse(stream(), media_type="text/event-stream")

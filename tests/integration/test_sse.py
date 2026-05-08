@@ -109,7 +109,7 @@ async def test_sse_receives_question_created(client):
         await client.post(f"/r/{code}/questions", json={"text": "hello"})
 
     poster_task = asyncio.create_task(poster())
-    events = await _collect_sse_events(fastapi_app, f"/r/{code}/events", num_events=2)
+    events = await _collect_sse_events(fastapi_app, f"/r/{code}/events", num_events=3)
     await poster_task
 
     assert any(e["type"] == "connected" for e in events), f"no connected event in {events}"

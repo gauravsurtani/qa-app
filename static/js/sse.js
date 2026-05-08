@@ -41,6 +41,10 @@
       const card = document.getElementById('q-' + data.id);
       if (data.state === 'hidden' && card) card.remove();
     }
+    else if (type === 'audience.count') {
+      const el = document.getElementById('audience-pill');
+      if (el) el.textContent = `● ${data.count} listening`;
+    }
     else if (type === 'room.closed') {
       window.location.reload();
     }
@@ -49,7 +53,7 @@
   function connect() {
     const es = new EventSource(`/r/${code}/events`);
     es.addEventListener('open', () => { backoff = 1000; });
-    ['connected', 'question.created', 'question.upvoted', 'question.state_changed', 'room.closed', 'ping']
+    ['connected', 'question.created', 'question.upvoted', 'question.state_changed', 'audience.count', 'room.closed', 'ping']
       .forEach(t => es.addEventListener(t, ev => handleEvent(t, JSON.parse(ev.data))));
     es.addEventListener('error', () => {
       es.close();

@@ -4,6 +4,7 @@
 <header class="app-header">
   <h1>{{ room.title or "Live Q&A" }}</h1>
   <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+    <span id="audience-pill" style="font-size: 13px; opacity: 0.85;">● 0 listening</span>
     <a href="/r/{{ room.code }}/host/qr?t={{ token }}" style="color: white; opacity: 0.85;">QR ⊞</a>
     <a href="/r/{{ room.code }}/export.csv?t={{ token }}" style="color: white; opacity: 0.85;">Download CSV</a>
     <button class="btn-secondary" onclick="endSession()">End session</button>
@@ -72,5 +73,6 @@ async function endSession() {
   alert('Session ended.');
 }
 </script>
+<script src="/static/js/shortcuts.js" defer></script>
 <script src="/static/js/sse.js" defer></script>
 {% endblock %}
