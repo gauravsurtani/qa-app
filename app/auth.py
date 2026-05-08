@@ -24,11 +24,14 @@ async def get_or_create_session_id(
     if qa_session and len(qa_session) >= 16:
         return qa_session
     new = new_session_id()
+    from app.config import get_settings
+    is_https = get_settings().app_base_url.lower().startswith("https://")
     response.set_cookie(
         AUDIENCE_COOKIE,
         new,
         httponly=True,
         samesite="lax",
+        secure=is_https,
         max_age=60 * 60 * 24 * 30,
     )
     return new

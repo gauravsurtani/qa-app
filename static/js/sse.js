@@ -39,7 +39,23 @@
     else if (type === 'question.upvoted') updateCount(data.id, data.upvotes);
     else if (type === 'question.state_changed') {
       const card = document.getElementById('q-' + data.id);
-      if (data.state === 'hidden' && card) card.remove();
+      if (!card) return;
+      if (data.state === 'hidden') {
+        card.remove();
+      } else if (data.state === 'pinned') {
+        const slot = document.getElementById('pinned-slot');
+        if (slot) {
+          slot.innerHTML = '';
+          card.classList.add('q-card-new');
+          slot.appendChild(card);
+        }
+      } else if (data.state === 'live') {
+        const slot = document.getElementById('pinned-slot');
+        if (slot && slot.contains(card)) {
+          slot.removeChild(card);
+          if (list) list.prepend(card);
+        }
+      }
     }
     else if (type === 'audience.count') {
       const el = document.getElementById('audience-pill');

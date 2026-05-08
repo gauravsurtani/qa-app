@@ -37,9 +37,9 @@ async def events(
                     except TimeoutError:
                         yield _format_sse("ping", {})
             finally:
-                count_after = await pubsub.subscriber_count(room.id) - 1
+                count_after = await pubsub.subscriber_count(room.id)
                 await pubsub.publish(
-                    room.id, {"type": "audience.count", "data": {"count": max(0, count_after)}}
+                    room.id, {"type": "audience.count", "data": {"count": count_after}}
                 )
 
     return StreamingResponse(stream(), media_type="text/event-stream")

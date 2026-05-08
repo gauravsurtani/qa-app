@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -37,6 +38,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await dispose_engine()
 
 
+_sweep_logger = logging.getLogger("qa.sweep")
+
+
 async def _sweep_loop() -> None:
     while True:
         try:
@@ -47,7 +51,7 @@ async def _sweep_loop() -> None:
                 )
                 await s.commit()
         except Exception:
-            pass
+            _sweep_logger.exception("expiry sweep failed")
         await asyncio.sleep(600)
 
 

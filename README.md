@@ -11,7 +11,15 @@ Presenter pins / answers / hides / stars in real time.
 
 ## Test
 
-    uv run pytest
+Unit + integration:
+
+    uv run pytest tests/unit tests/integration
+
+End-to-end (Playwright Chromium, requires `uv run playwright install chromium` first):
+
+    uv run pytest tests/e2e
+
+Combined `pytest` is currently incompatible due to a known pytest-asyncio / pytest-playwright event-loop conflict. Run the two suites separately.
 
 ## Deploy (Railway)
 
