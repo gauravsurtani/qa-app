@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy import delete, select
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +13,8 @@ from app.auth import (
 from app.config import get_settings
 from app.db import get_session
 from app.models import Question, Upvote
-from app.services.pubsub import pubsub
 from app.routes.questions import _ensure_room_writable
+from app.services.pubsub import pubsub
 from app.services.ratelimit import RateLimiter
 
 router = APIRouter()

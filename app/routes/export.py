@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy import select
@@ -19,13 +19,11 @@ async def export_csv(
     db: AsyncSession = Depends(get_session),
 ) -> Response:
     result = await db.execute(
-        select(Question)
-        .where(Question.room_id == room.id)
-        .order_by(Question.created_at.asc())
+        select(Question).where(Question.room_id == room.id).order_by(Question.created_at.asc())
     )
     questions = list(result.scalars())
     payload = build_csv(room, questions)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     filename = f"qa-{room.code}-{today}.csv"
     return Response(
         content=payload,

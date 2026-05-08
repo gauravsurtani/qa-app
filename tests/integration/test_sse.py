@@ -6,11 +6,11 @@ any bytes to the caller. This makes it incompatible with infinite SSE
 streams. Instead, we call the ASGI app directly and collect events via
 an asyncio.Queue that is filled by the ASGI `send` callback.
 """
+
 import asyncio
 import json
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 
 
 async def _collect_sse_events(
@@ -79,7 +79,7 @@ async def _collect_sse_events(
         try:
             ev = await asyncio.wait_for(event_queue.get(), timeout=remaining)
             collected.append(ev)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             break
 
     disconnect_event.set()
@@ -96,6 +96,7 @@ async def _collect_sse_events(
 async def test_sse_receives_question_created(client):
     # Reset rate limiter to avoid interference from earlier tests in the same run
     from app.routes.questions import get_question_limiter
+
     get_question_limiter().reset()
 
     r = await client.post("/rooms", json={})

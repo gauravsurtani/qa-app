@@ -1,5 +1,5 @@
-from datetime import timedelta
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -11,9 +11,8 @@ from app.utils.codes import generate_room_code
 from app.utils.ids import new_presenter_token
 
 
-def _new_expiry():
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc) + timedelta(hours=get_settings().room_ttl_hours)
+def _new_expiry() -> datetime:
+    return datetime.now(UTC) + timedelta(hours=get_settings().room_ttl_hours)
 
 
 async def create_room(
@@ -46,15 +45,17 @@ async def create_room(
 
 
 async def touch_room(db: AsyncSession, room: Room) -> None:
-    from datetime import datetime, timezone
-    room.last_activity_at = datetime.now(timezone.utc)
+    from datetime import datetime
+
+    room.last_activity_at = datetime.now(UTC)
     room.expires_at = _new_expiry()
     await db.flush()
 
 
 async def close_room(db: AsyncSession, room: Room) -> None:
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+    from datetime import datetime
+
+    now = datetime.now(UTC)
     room.status = RoomStatus.CLOSED
     room.closed_at = now
     room.last_activity_at = now
@@ -63,7 +64,8 @@ async def close_room(db: AsyncSession, room: Room) -> None:
 
 
 async def expired_rooms(db: AsyncSession) -> Iterable[Room]:
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+    from datetime import datetime
+
+    now = datetime.now(UTC)
     result = await db.execute(select(Room).where(Room.expires_at < now))
     return result.scalars().all()

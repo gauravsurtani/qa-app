@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest_asyncio
 from sqlalchemy import select
@@ -23,7 +23,7 @@ async def session_with_room():
         room = Room(
             code="ACDEFG",
             presenter_token="t" * 32,
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
         s.add(room)
         await s.flush()
@@ -59,6 +59,7 @@ async def test_invalid_state_raises(session_with_room):
     s.add(q)
     await s.flush()
     import pytest
+
     with pytest.raises(InvalidStateTransition):
         await set_question_state(s, room_id=room.id, question=q, new_state="bogus")
 

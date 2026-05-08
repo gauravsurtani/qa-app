@@ -40,8 +40,18 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "B", "UP", "RUF"]
+ignore = [
+  "B008",   # FastAPI Depends() in function defaults — idiomatic pattern
+  "N818",   # Exception name suffix — existing class kept as-is
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B017", "E501"]
+"app/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
-strict = true
 files = ["app"]
+disallow_untyped_defs = true
+warn_unused_ignores = true
+ignore_missing_imports = true

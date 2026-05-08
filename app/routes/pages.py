@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import Response
 
 from app.auth import constant_time_eq, get_or_create_session_id, get_room_by_code
 from app.config import get_settings
@@ -13,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request) -> Response:
     return request.app.state.templates.TemplateResponse(request, "home.html", {})
 
 
@@ -23,7 +24,7 @@ async def audience_view(
     request: Request,
     session_id: str = Depends(get_or_create_session_id),
     db: AsyncSession = Depends(get_session),
-):
+) -> Response:
     room = await get_room_by_code(code, db)
     if room.status == RoomStatus.CLOSED:
         return request.app.state.templates.TemplateResponse(
@@ -39,19 +40,21 @@ async def audience_view(
     participant = p_result.scalar_one_or_none()
     needs_join = participant is None
 
-    questions: list = []
+    questions: list[Question] = []
     my_upvotes: list[int] = []
     my_question_ids: list[int] = []
-    if not needs_join:
+    if not needs_join and participant is not None:
         q_result = await db.execute(
             select(Question)
             .where(
                 Question.room_id == room.id,
-                Question.state.in_([QuestionState.LIVE, QuestionState.PINNED, QuestionState.ANSWERED]),
+                Question.state.in_(
+                    [QuestionState.LIVE, QuestionState.PINNED, QuestionState.ANSWERED]
+                ),
             )
             .order_by(Question.upvote_count.desc(), Question.created_at.desc())
         )
-        questions = q_result.scalars().all()
+        questions = list(q_result.scalars().all())
 
         u_result = await db.execute(
             select(Upvote.question_id).where(Upvote.participant_id == participant.id)
@@ -80,7 +83,7 @@ async def presenter_view(
     t: str | None = None,
     v: str | None = None,
     db: AsyncSession = Depends(get_session),
-):
+) -> Response:
     room = await get_room_by_code(code, db)
     if not t or not constant_time_eq(t, room.presenter_token):
         return RedirectResponse(f"/r/{code}", status_code=303)
@@ -120,7 +123,7 @@ async def fullscreen_qr(
     request: Request,
     t: str | None = None,
     db: AsyncSession = Depends(get_session),
-):
+) -> Response:
     room = await get_room_by_code(code, db)
     if not t or not constant_time_eq(t, room.presenter_token):
         return RedirectResponse(f"/r/{code}", status_code=303)
@@ -129,5 +132,9 @@ async def fullscreen_qr(
     return request.app.state.templates.TemplateResponse(
         request,
         "fullscreen_qr.html",
-        {"room": room, "audience_url": audience_url, "qr_svg": generate_qr_svg(audience_url, scale=14)},
+        {
+            "room": room,
+            "audience_url": audience_url,
+            "qr_svg": generate_qr_svg(audience_url, scale=14),
+        },
     )

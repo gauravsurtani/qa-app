@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import (
@@ -14,7 +13,7 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.db import get_session
-from app.models import Question, QuestionState, Room, RoomStatus
+from app.models import Question, Room, RoomStatus
 from app.schemas import (
     JoinRequest,
     QuestionCreateRequest,
@@ -44,7 +43,7 @@ def get_question_limiter() -> RateLimiter:
 def _ensure_room_writable(room: Room) -> None:
     if room.status == RoomStatus.CLOSED:
         raise HTTPException(status.HTTP_410_GONE, "Room is closed")
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     expires = room.expires_at.replace(tzinfo=None) if room.expires_at.tzinfo else room.expires_at
     if expires < now:
         raise HTTPException(status.HTTP_410_GONE, "Room is expired")
@@ -57,7 +56,7 @@ async def join_room(
     response: Response,
     session_id: Annotated[str, Depends(get_or_create_session_id)],
     db: AsyncSession = Depends(get_session),
-):
+) -> Response:
     room = await get_room_by_code(code, db)
     _ensure_room_writable(room)
     p = await get_or_create_participant(room, session_id, body.name, db)
@@ -131,6 +130,13 @@ async def patch_question(
     await db.refresh(q)
     await pubsub.publish(
         room.id,
-        {"type": "question.state_changed", "data": {"id": q.id, "state": q.state.value if hasattr(q.state, "value") else q.state, "starred": q.starred}},
+        {
+            "type": "question.state_changed",
+            "data": {
+                "id": q.id,
+                "state": q.state.value if hasattr(q.state, "value") else q.state,
+                "starred": q.starred,
+            },
+        },
     )
     return QuestionDTO.model_validate(q)

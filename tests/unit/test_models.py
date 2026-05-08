@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -23,7 +23,7 @@ async def test_create_room_with_defaults(session):
     room = Room(
         code="ABC123",
         presenter_token="t" * 32,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
     )
     session.add(room)
     await session.commit()
@@ -38,7 +38,7 @@ async def test_question_with_participant(session):
     room = Room(
         code="ABC123",
         presenter_token="t" * 32,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
     )
     session.add(room)
     await session.flush()
@@ -58,7 +58,7 @@ async def test_upvote_composite_pk_prevents_dupes(session):
     room = Room(
         code="ABC123",
         presenter_token="t" * 32,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
     )
     session.add(room)
     await session.flush()

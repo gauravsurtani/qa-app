@@ -12,7 +12,9 @@ async def test_email_not_sent_without_address(client):
 
 
 async def test_email_sent_when_address_provided(client):
-    with patch("app.routes.rooms.send_session_ended_email", new=AsyncMock(return_value=True)) as mock_send:
+    with patch(
+        "app.routes.rooms.send_session_ended_email", new=AsyncMock(return_value=True)
+    ) as mock_send:
         create = await client.post("/rooms", json={"presenter_email": "a@b.co", "title": "T"})
         body = create.json()
         code = body["code"]

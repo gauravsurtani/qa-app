@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:8000"
     sqlite_path: str = "./data/qa.db"
     log_level: str = "INFO"
-    session_secret: str = Field(min_length=32)
+    session_secret: str = Field(default="", min_length=32)
     room_ttl_hours: int = 24
 
     email_provider: str = "resend"

@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
-from fastapi.responses import RedirectResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,12 +72,12 @@ async def end_session(
             stats={"total": len(questions), "upvotes": total_upvotes, "participants": p_count or 0},
             permalink=permalink,
         )
-        filename = f"qa-{room.code}-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.csv"
+        filename = f"qa-{room.code}-{datetime.now(UTC).strftime('%Y-%m-%d')}.csv"
         room_id = room.id
         to_address = room.presenter_email
         subject = f"Your Q&A session '{title or room.code}' has ended"
 
-        async def _send_and_record():
+        async def _send_and_record() -> None:
             ok = await send_session_ended_email(
                 to_address=to_address,
                 subject=subject,
@@ -88,11 +87,12 @@ async def end_session(
             )
             if ok:
                 from app.db import get_sessionmaker
+
                 sm = get_sessionmaker()
                 async with sm() as s:
                     fresh = await s.get(Room, room_id)
                     if fresh:
-                        fresh.email_sent_at = datetime.now(timezone.utc)
+                        fresh.email_sent_at = datetime.now(UTC)
                         await s.commit()
 
         background_tasks.add_task(_send_and_record)
@@ -100,11 +100,13 @@ async def end_session(
     return {"status": "closed"}
 
 
-def _render_email_html(*, title: str | None, stats: dict, permalink: str) -> str:
+def _render_email_html(*, title: str | None, stats: dict[str, int], permalink: str) -> str:
     env = Environment(
         loader=FileSystemLoader(Path(__file__).resolve().parent.parent.parent / "templates"),
         autoescape=select_autoescape(["html"]),
     )
     return env.get_template("email/session_ended.html").render(
-        title=title, stats=stats, permalink=permalink,
+        title=title,
+        stats=stats,
+        permalink=permalink,
     )

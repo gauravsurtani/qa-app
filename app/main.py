@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -8,19 +9,19 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import delete, text
 
+from app import models
 from app.config import get_settings
 from app.db import create_all, dispose_engine, get_sessionmaker, init_engine
-from app import models  # noqa: F401  (registers tables with Base.metadata)
 from app.routes import events as events_routes
 from app.routes import export as export_routes
 from app.routes import pages as pages_routes
-from app.routes import rooms as rooms_routes
 from app.routes import questions as questions_routes
+from app.routes import rooms as rooms_routes
 from app.routes import upvotes as upvotes_routes
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     get_settings()
     init_engine()
     await create_all()
@@ -42,7 +43,7 @@ async def _sweep_loop() -> None:
             sm = get_sessionmaker()
             async with sm() as s:
                 await s.execute(
-                    delete(models.Room).where(models.Room.expires_at < datetime.now(timezone.utc))
+                    delete(models.Room).where(models.Room.expires_at < datetime.now(UTC))
                 )
                 await s.commit()
         except Exception:

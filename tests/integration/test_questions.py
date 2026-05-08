@@ -54,6 +54,7 @@ async def test_pin_replaces_previous_pin(client):
 
 async def test_rate_limit(client):
     from app.routes.questions import get_question_limiter
+
     get_question_limiter().reset()
     code, _ = await _create_room_and_join(client)
     for i in range(5):

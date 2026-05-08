@@ -3,7 +3,6 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-
 NameStr = Annotated[str, Field(min_length=1, max_length=40)]
 QuestionText = Annotated[str, Field(min_length=1, max_length=280)]
 TitleStr = Annotated[str, Field(min_length=1, max_length=80)]

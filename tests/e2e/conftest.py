@@ -25,13 +25,13 @@ def live_server(tmp_path_factory):
         "EMAIL_API_KEY": "",
     }
     proc = subprocess.Popen(
-        ["uv", "run", "uvicorn", "app.main:app",
-         "--host", "127.0.0.1", "--port", str(port)],
+        ["uv", "run", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(port)],
         env=env,
         cwd=Path(__file__).resolve().parent.parent.parent,
     )
     deadline = time.time() + 15
     import urllib.request
+
     while time.time() < deadline:
         try:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=1)
@@ -46,6 +46,7 @@ def live_server(tmp_path_factory):
 @pytest.fixture(scope="session")
 def playwright_instance():
     from playwright.sync_api import sync_playwright
+
     with sync_playwright() as p:
         yield p
 
