@@ -1,0 +1,26 @@
+<article class="q-card {% if is_new %}q-card-new{% endif %}"
+         id="q-{{ q.id }}"
+         data-question-id="{{ q.id }}"
+         style="background: white; border: 1px solid var(--slate-200);
+                border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
+  <div style="display: flex; gap: 12px; align-items: flex-start;">
+    <button class="upvote-btn"
+            data-action="upvote"
+            data-id="{{ q.id }}"
+            style="background: {% if upvoted %}var(--dlai-coral){% else %}white{% endif %};
+                   color: {% if upvoted %}white{% else %}var(--slate-500){% endif %};
+                   border: 1px solid var(--slate-200);
+                   width: 48px; padding: 8px 0;
+                   display: flex; flex-direction: column; align-items: center;
+                   border-radius: var(--radius-sm);">
+      <span style="font-size: 12px;">▲</span>
+      <span class="upvote-count" style="font-size: 14px; font-weight: 600;">{{ q.upvote_count }}</span>
+    </button>
+    <div style="flex: 1; min-width: 0;">
+      <p style="margin: 0 0 6px; line-height: 1.45; word-wrap: break-word;">{{ q.text }}</p>
+      <div class="muted" style="font-size: 12px;">
+        — {{ q.author_name }}{% if is_mine %} <span style="color: var(--dlai-teal); font-weight: 600;">(you)</span>{% endif %}
+      </div>
+    </div>
+  </div>
+</article>

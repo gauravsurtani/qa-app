@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Q&A ended — DLAI{% endblock %}
+{% block body %}
+<main style="max-width: 480px; margin: 96px auto; padding: 0 16px; text-align: center;">
+  <h1>This Q&amp;A has ended</h1>
+  <p class="muted">Thanks for joining {{ room.title or "the session" }}.</p>
+</main>
+{% endblock %}
