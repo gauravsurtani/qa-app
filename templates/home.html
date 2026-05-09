@@ -16,20 +16,15 @@
       </div>
       <input type="text" name="title" maxlength="80" placeholder="e.g. AI Talks 2026">
     </label>
-    <label>
-      <div style="font-size: 13px; color: var(--slate-700); margin-bottom: 4px;">
-        Email me a copy when the session ends <span class="muted">(optional)</span>
-      </div>
-      <input type="email" name="presenter_email" placeholder="you@example.com">
-      <div style="font-size: 12px; color: var(--slate-500); margin-top: 4px;">
-        We only use this to email your Q&amp;A archive. No marketing, no sharing.
-      </div>
-    </label>
     <button type="submit" class="btn-primary" style="margin-top: 8px;">
       Start a session →
     </button>
     <div id="form-error" style="color: var(--dlai-coral-deep); font-size: 14px;"></div>
   </form>
+
+  <p class="muted" style="margin-top: 16px; font-size: 13px;">
+    You'll be able to download your questions as CSV anytime from the presenter dashboard.
+  </p>
 
   <p class="muted" style="margin-top: 24px; font-size: 14px;">
     Have a code? Visit <code>/r/&lt;CODE&gt;</code> directly.
@@ -40,19 +35,15 @@
 document.getElementById('start-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
-  const body = {
-    title: f.title.value || null,
-    presenter_email: f.presenter_email.value || null,
-  };
-  for (const k of Object.keys(body)) if (body[k] === null || body[k] === '') delete body[k];
+  const body = {};
+  if (f.title.value) body.title = f.title.value;
   const r = await fetch('/rooms', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body),
   });
   if (!r.ok) {
-    document.getElementById('form-error').textContent =
-      r.status === 422 ? 'Please enter a valid email or leave it blank.' : 'Could not create session.';
+    document.getElementById('form-error').textContent = 'Could not create session.';
     return;
   }
   const data = await r.json();

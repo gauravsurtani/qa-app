@@ -68,9 +68,15 @@ document.addEventListener('click', async (e) => {
 });
 
 async function endSession() {
-  if (!confirm("End this session? Audience won't be able to ask new questions.")) return;
-  await fetch(`/r/${window.ROOM_CODE}/end?t=${window.PRESENTER_TOKEN}`, { method: 'POST' });
-  alert('Session ended.');
+  if (!confirm("End this session? Audience won't be able to ask new questions. You can still download the CSV for the next 24 hours.")) return;
+  const r = await fetch(`/r/${window.ROOM_CODE}/end?t=${window.PRESENTER_TOKEN}`, { method: 'POST' });
+  if (r.ok) {
+    if (confirm('Session ended. Download your questions as CSV now?')) {
+      window.location.href = `/r/${window.ROOM_CODE}/export.csv?t=${window.PRESENTER_TOKEN}`;
+    }
+  } else {
+    alert('Could not end session.');
+  }
 }
 </script>
 <script src="/static/js/shortcuts.js" defer></script>
