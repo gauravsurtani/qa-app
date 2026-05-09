@@ -17,4 +17,5 @@ COPY templates ./templates
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Use shell form so $PORT (set by Railway) expands. Fallback to 8000 for local docker.
+CMD uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
