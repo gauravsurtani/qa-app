@@ -62,17 +62,19 @@ app.mount("/static", StaticFiles(directory=_BASE / "static"), name="static")
 templates = Jinja2Templates(directory=_BASE / "templates")
 app.state.templates = templates
 
-app.include_router(pages_routes.router)
-app.include_router(rooms_routes.router)
-app.include_router(questions_routes.router)
-app.include_router(upvotes_routes.router)
-app.include_router(events_routes.router)
-app.include_router(export_routes.router)
-
-
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
     sm = get_sessionmaker()
     async with sm() as s:
         await s.execute(text("SELECT 1"))
     return {"status": "ok"}
+
+
+# Order matters: rooms/questions/upvotes/events/export define explicit prefixes
+# that won't conflict with the catch-all `/{code}` registered at the end of pages_routes.
+app.include_router(rooms_routes.router)
+app.include_router(questions_routes.router)
+app.include_router(upvotes_routes.router)
+app.include_router(events_routes.router)
+app.include_router(export_routes.router)
+app.include_router(pages_routes.router)

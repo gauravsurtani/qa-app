@@ -29,12 +29,29 @@
     You'll be able to download your questions as CSV anytime from the presenter dashboard.
   </p>
 
-  <p class="muted" style="margin-top: 24px; font-size: 14px;">
-    Have a code? Visit <code>/r/&lt;CODE&gt;</code> directly.
-  </p>
+  <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--slate-200);">
+    <div style="font-size: 13px; color: var(--slate-500); margin-bottom: 8px;">
+      Joining as audience?
+    </div>
+    <form id="join-code-form" style="display: flex; gap: 8px;" autocomplete="off">
+      <input
+        type="text"
+        name="code"
+        placeholder="Enter code (e.g. ACDEFG)"
+        maxlength="6"
+        pattern="[ACDEFGHJKLMNPQRTUVWXY3479]{6}"
+        style="flex: 1; text-transform: uppercase; letter-spacing: 4px; font-family: 'SF Mono', monospace;"
+        autocapitalize="characters"
+        spellcheck="false">
+      <button type="submit" class="btn-secondary" style="white-space: nowrap;">Join →</button>
+    </form>
+    <div id="join-error" style="color: var(--dlai-coral-deep); font-size: 13px; margin-top: 6px; min-height: 18px;"></div>
+  </div>
 </main>
 
 <script>
+const ROOM_CODE_RE = /^[ACDEFGHJKLMNPQRTUVWXY3479]{6}$/;
+
 document.getElementById('start-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
@@ -51,6 +68,25 @@ document.getElementById('start-form').addEventListener('submit', async (e) => {
   }
   const data = await r.json();
   window.location.href = data.presenter_url.replace(window.location.origin, '');
+});
+
+const joinForm = document.getElementById('join-code-form');
+const joinInput = joinForm.querySelector('input[name="code"]');
+const joinError = document.getElementById('join-error');
+
+joinInput.addEventListener('input', () => {
+  joinInput.value = joinInput.value.toUpperCase().replace(/\s+/g, '');
+  joinError.textContent = '';
+});
+
+joinForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const code = joinInput.value.trim().toUpperCase();
+  if (!ROOM_CODE_RE.test(code)) {
+    joinError.textContent = 'Codes are 6 characters from A–Y and 3, 4, 7, 9.';
+    return;
+  }
+  window.location.href = `/${code}`;
 });
 </script>
 {% endblock %}

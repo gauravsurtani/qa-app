@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +8,15 @@ from app.auth import constant_time_eq, get_or_create_session_id, get_room_by_cod
 from app.config import get_settings
 from app.db import get_session
 from app.models import Participant, Question, QuestionState, RoomStatus, Upvote
+from app.utils.codes import is_valid_room_code
 from app.utils.qr import generate_qr_svg
 
 router = APIRouter()
+
+
+def _audience_url(code: str) -> str:
+    base = get_settings().app_base_url.rstrip("/")
+    return f"{base}/{code}"
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -18,12 +24,11 @@ async def home(request: Request) -> Response:
     return request.app.state.templates.TemplateResponse(request, "home.html", {})
 
 
-@router.get("/r/{code}", response_class=HTMLResponse)
-async def audience_view(
+async def _render_audience_view(
     code: str,
     request: Request,
-    session_id: str = Depends(get_or_create_session_id),
-    db: AsyncSession = Depends(get_session),
+    session_id: str,
+    db: AsyncSession,
 ) -> Response:
     room = await get_room_by_code(code, db)
     if room.status == RoomStatus.CLOSED:
@@ -76,6 +81,16 @@ async def audience_view(
     )
 
 
+@router.get("/r/{code}", response_class=HTMLResponse)
+async def audience_view(
+    code: str,
+    request: Request,
+    session_id: str = Depends(get_or_create_session_id),
+    db: AsyncSession = Depends(get_session),
+) -> Response:
+    return await _render_audience_view(code, request, session_id, db)
+
+
 @router.get("/r/{code}/host", response_class=HTMLResponse)
 async def presenter_view(
     code: str,
@@ -86,10 +101,9 @@ async def presenter_view(
 ) -> Response:
     room = await get_room_by_code(code, db)
     if not t or not constant_time_eq(t, room.presenter_token):
-        return RedirectResponse(f"/r/{code}", status_code=303)
+        return RedirectResponse(f"/{code}", status_code=303)
 
-    base = get_settings().app_base_url.rstrip("/")
-    audience_url = f"{base}/r/{room.code}"
+    audience_url = _audience_url(room.code)
 
     q_result = await db.execute(
         select(Question)
@@ -126,9 +140,8 @@ async def fullscreen_qr(
 ) -> Response:
     room = await get_room_by_code(code, db)
     if not t or not constant_time_eq(t, room.presenter_token):
-        return RedirectResponse(f"/r/{code}", status_code=303)
-    base = get_settings().app_base_url.rstrip("/")
-    audience_url = f"{base}/r/{room.code}"
+        return RedirectResponse(f"/{code}", status_code=303)
+    audience_url = _audience_url(room.code)
     return request.app.state.templates.TemplateResponse(
         request,
         "fullscreen_qr.html",
@@ -138,3 +151,19 @@ async def fullscreen_qr(
             "qr_svg": generate_qr_svg(audience_url, scale=14),
         },
     )
+
+
+# Catch-all short audience URL: /{code}. Registered last so explicit routes
+# (/, /r/..., /healthz, /rooms, /static/...) all match first. The handler itself
+# 404s anything that doesn't pass `is_valid_room_code` so /favicon.ico and friends
+# still 404 cleanly instead of querying the DB.
+@router.get("/{code}", response_class=HTMLResponse)
+async def short_audience_view(
+    code: str,
+    request: Request,
+    session_id: str = Depends(get_or_create_session_id),
+    db: AsyncSession = Depends(get_session),
+) -> Response:
+    if not is_valid_room_code(code):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    return await _render_audience_view(code, request, session_id, db)
