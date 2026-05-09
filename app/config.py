@@ -15,8 +15,8 @@ class Settings(BaseSettings):
 
     email_provider: str = "resend"
     email_api_key: str = ""
-    email_from_address: str = "qa@dlai.app"
-    email_from_name: str = "DLAI Q&A"
+    email_from_address: str = "qa@askup.app"
+    email_from_name: str = "AskUp"
 
     rate_limit_questions_per_min: int = 5
     rate_limit_upvotes_per_min: int = 30

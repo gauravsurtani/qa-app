@@ -1,7 +1,7 @@
 [project]
 name = "qa-app"
 version = "0.1.0"
-description = "Live Q&A app for presenters — DeepLearning.AI"
+description = "AskUp — Live Q&A that rises to the top"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115",

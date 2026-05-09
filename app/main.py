@@ -55,7 +55,7 @@ async def _sweep_loop() -> None:
         await asyncio.sleep(600)
 
 
-app = FastAPI(title="qa-app", lifespan=lifespan)
+app = FastAPI(title="AskUp", lifespan=lifespan)
 
 _BASE = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=_BASE / "static"), name="static")
