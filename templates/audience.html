@@ -30,7 +30,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
 </script>
 {% else %}
 <main style="max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 140px;">
-  <div class="muted" style="font-size: 13px; margin-bottom: 12px;">
+  <div class="muted" style="font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
     Asking as: <strong>{{ participant.name }}</strong>
   </div>
   <div id="pinned-slot"></div>
@@ -40,6 +40,13 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
       {% set is_mine = q.id in my_question_ids %}
       {% include "partials/question_card.html" %}
     {% endfor %}
+    {% if not questions %}
+    <div id="empty-state-audience" style="padding: 64px 0; text-align: center;" aria-live="polite">
+      <div style="font-size: 32px; margin-bottom: 12px;">👋</div>
+      <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--slate-700);">Be the first to ask</p>
+      <p class="muted" style="margin: 0; font-size: 14px;">Type a question below — others can upvote it.</p>
+    </div>
+    {% endif %}
   </div>
 </main>
 
@@ -73,9 +80,16 @@ composer.addEventListener('submit', async (e) => {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({text}),
   });
-  if (r.ok) { ta.value = ''; cc.textContent = '0/280'; }
+  if (r.ok) {
+    ta.value = '';
+    cc.textContent = '0/280';
+    // Remove empty state on first question submission
+    const empty = document.getElementById('empty-state-audience');
+    if (empty) empty.remove();
+  }
 });
 </script>
+<script src="/static/js/avatar.js" defer></script>
 <script src="/static/js/upvote.js" defer></script>
 <script src="/static/js/sse.js" defer></script>
 {% endif %}

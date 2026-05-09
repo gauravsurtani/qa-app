@@ -6,6 +6,43 @@
   const list = document.getElementById('questions-list');
   const pinned = document.getElementById('pinned-slot');
 
+  /* ── FLIP helper — item #2 ───────────────────────────── */
+  function flipMove(card, newParent, prepend) {
+    const first = card.getBoundingClientRect();
+    if (prepend && newParent.firstChild) {
+      newParent.insertBefore(card, newParent.firstChild);
+    } else {
+      newParent.appendChild(card);
+    }
+    const last = card.getBoundingClientRect();
+    const dx = first.left - last.left;
+    const dy = first.top - last.top;
+    if (dx === 0 && dy === 0) return;
+    card.style.transform = `translate(${dx}px, ${dy}px)`;
+    card.style.transition = 'transform 0s';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 320ms cubic-bezier(0.32, 0.72, 0, 1)';
+        card.style.transform = '';
+      });
+    });
+  }
+
+  /* ── Rolling digit helper — item #5 ─────────────────── */
+  function rollCount(el, newValue) {
+    if (!el) return;
+    const str = String(newValue);
+    if (el.textContent === str) return;
+    el.classList.remove('digit-arrive');
+    el.classList.add('digit-roll');
+    setTimeout(() => {
+      el.textContent = str;
+      el.classList.remove('digit-roll');
+      el.classList.add('digit-arrive');
+      setTimeout(() => el.classList.remove('digit-arrive'), 120);
+    }, 110);
+  }
+
   function appendQuestion(q, isNew) {
     if (!list || document.getElementById('q-' + q.id)) return;
     const tmpl = document.createElement('template');
@@ -31,7 +68,7 @@
 
   function updateCount(qid, count) {
     const el = document.querySelector('#q-' + qid + ' .upvote-count');
-    if (el) el.textContent = String(count);
+    rollCount(el, count);
   }
 
   function handleEvent(type, data) {
@@ -46,20 +83,38 @@
         const slot = document.getElementById('pinned-slot');
         if (slot) {
           slot.innerHTML = '';
-          card.classList.add('q-card-new');
-          slot.appendChild(card);
+          card.classList.remove('q-card-new');
+          flipMove(card, slot, false);
         }
       } else if (data.state === 'live') {
         const slot = document.getElementById('pinned-slot');
         if (slot && slot.contains(card)) {
-          slot.removeChild(card);
-          if (list) list.prepend(card);
+          if (list) flipMove(card, list, true);
+          else slot.removeChild(card);
         }
       }
     }
     else if (type === 'audience.count') {
-      const el = document.getElementById('audience-pill');
-      if (el) el.textContent = `● ${data.count} listening`;
+      const pill = document.getElementById('audience-pill');
+      if (pill) {
+        // Build dot + count structure if not already done
+        let dot = pill.querySelector('.audience-dot');
+        let countEl = pill.querySelector('.audience-count-num');
+        if (!dot) {
+          pill.innerHTML = '';
+          dot = document.createElement('span');
+          dot.className = 'audience-dot';
+          dot.setAttribute('aria-hidden', 'true');
+          pill.appendChild(dot);
+          countEl = document.createElement('span');
+          countEl.className = 'audience-count-num';
+          pill.appendChild(countEl);
+          const label = document.createElement('span');
+          label.textContent = ' listening';
+          pill.appendChild(label);
+        }
+        rollCount(countEl, data.count);
+      }
     }
     else if (type === 'room.closed') {
       window.location.reload();

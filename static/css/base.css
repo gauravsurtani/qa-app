@@ -55,7 +55,11 @@ input, textarea {
 input:focus, textarea:focus {
   outline: none;
   border-color: var(--dlai-coral);
-  box-shadow: 0 0 0 2px var(--dlai-coral-bg);
+  box-shadow: 0 0 0 4px var(--dlai-coral-bg);
+  transform: scale(1.005);
+  transition: border-color 140ms var(--easing-in),
+              box-shadow 140ms var(--easing-in),
+              transform 140ms var(--easing-in);
 }
 input::placeholder, textarea::placeholder { color: var(--slate-400); }
 

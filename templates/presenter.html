@@ -4,7 +4,9 @@
 <header class="app-header">
   <h1>{{ room.title or "Live Q&A" }}</h1>
   <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
-    <span id="audience-pill" style="font-size: 13px; opacity: 0.85;">● 0 listening</span>
+    <span id="audience-pill" style="font-size: 13px; opacity: 0.9; display:flex; align-items:center;">
+      <span class="audience-dot" aria-hidden="true"></span><span class="audience-count-num">0</span><span> listening</span>
+    </span>
     <a href="/r/{{ room.code }}/host/qr?t={{ token }}" style="color: white; opacity: 0.85;">QR ⊞</a>
     <a href="/r/{{ room.code }}/export.csv?t={{ token }}" style="color: white; opacity: 0.85;">Download CSV</a>
     <button class="btn-secondary" onclick="endSession()">End session</button>
@@ -42,6 +44,17 @@
           </div>
         </article>
       {% endfor %}
+      {% if not questions %}
+      <div id="empty-state-presenter" style="padding: 64px 0; text-align: center;" aria-live="polite">
+        <div style="font-size: 28px; margin-bottom: 12px;">⏳</div>
+        <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--slate-700);">Waiting for the first question…</p>
+        <p class="muted" style="margin: 0; font-size: 14px;">
+          Your audience is at
+          <code style="background: var(--slate-100); padding: 2px 6px; border-radius: 4px;">/r/{{ room.code }}</code>
+          &middot; Code <strong>{{ room.code }}</strong>
+        </p>
+      </div>
+      {% endif %}
     </div>
   </section>
 </main>
@@ -50,21 +63,60 @@
 window.ROOM_CODE = {{ room.code|tojson }};
 window.PRESENTER_TOKEN = {{ token|tojson }};
 
+const TOAST_MESSAGES = {
+  pinned: 'Pinned',
+  answered: 'Marked answered',
+  hidden: 'Hidden',
+  starred: 'Starred',
+};
+
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.action-btn');
   if (!btn) return;
   const id = btn.dataset.id;
   const body = {};
-  if (btn.dataset.act === 'state') body.state = btn.dataset.val;
+  let toastMsg = null;
+
+  if (btn.dataset.act === 'state') {
+    body.state = btn.dataset.val;
+    toastMsg = TOAST_MESSAGES[btn.dataset.val] || btn.dataset.val;
+  }
   if (btn.dataset.act === 'starred') {
     const card = document.getElementById('q-' + id);
     body.starred = !card.dataset.starred || card.dataset.starred === 'false';
+    toastMsg = 'Starred';
   }
-  await fetch(`/r/${window.ROOM_CODE}/questions/${id}?t=${window.PRESENTER_TOKEN}`, {
+
+  // Button flash — item #9
+  btn.classList.add('btn-flashing');
+  setTimeout(() => btn.classList.remove('btn-flashing'), 280);
+
+  const r = await fetch(`/r/${window.ROOM_CODE}/questions/${id}?t=${window.PRESENTER_TOKEN}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body),
   });
+
+  if (r.ok && toastMsg && window.showToast) {
+    window.showToast(toastMsg, 'success');
+  }
+
+  // Remove empty state once a question exists
+  const empty = document.getElementById('empty-state-presenter');
+  if (empty && document.querySelectorAll('#questions-list .q-card').length > 0) {
+    empty.remove();
+  }
+});
+
+// Remove empty state on first SSE question.created
+document.addEventListener('DOMContentLoaded', () => {
+  const list = document.getElementById('questions-list');
+  if (!list) return;
+  const obs = new MutationObserver(() => {
+    const empty = document.getElementById('empty-state-presenter');
+    if (empty && list.querySelectorAll('.q-card').length > 0) empty.remove();
+  });
+  obs.observe(list, { childList: true });
 });
 
 async function endSession() {
@@ -79,6 +131,8 @@ async function endSession() {
   }
 }
 </script>
+<script src="/static/js/toast.js" defer></script>
+<script src="/static/js/avatar.js" defer></script>
 <script src="/static/js/shortcuts.js" defer></script>
 <script src="/static/js/sse.js" defer></script>
 {% endblock %}
