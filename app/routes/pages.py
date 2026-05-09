@@ -4,7 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
-from app.auth import constant_time_eq, get_or_create_session_id, get_room_by_code
+from app.auth import (
+    AUDIENCE_COOKIE,
+    constant_time_eq,
+    get_or_create_session_id,
+    get_room_by_code,
+)
 from app.config import get_settings
 from app.db import get_session
 from app.models import Participant, Question, QuestionState, RoomStatus, Upvote
@@ -17,6 +22,26 @@ router = APIRouter()
 def _audience_url(code: str) -> str:
     base = get_settings().app_base_url.rstrip("/")
     return f"{base}/{code}"
+
+
+def _ensure_session_cookie(request: Request, response: Response, session_id: str) -> None:
+    """Persist the audience session_id as a cookie on the actual response.
+
+    FastAPI's "background response" merge only fires for routes that return non-Response
+    values; explicit TemplateResponse / RedirectResponse instances drop dependency-set
+    cookies. Setting it here guarantees the audience receives the cookie on first visit.
+    """
+    if request.cookies.get(AUDIENCE_COOKIE) == session_id:
+        return
+    is_https = get_settings().app_base_url.lower().startswith("https://")
+    response.set_cookie(
+        AUDIENCE_COOKIE,
+        session_id,
+        httponly=True,
+        samesite="lax",
+        secure=is_https,
+        max_age=60 * 60 * 24 * 30,
+    )
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -32,9 +57,11 @@ async def _render_audience_view(
 ) -> Response:
     room = await get_room_by_code(code, db)
     if room.status == RoomStatus.CLOSED:
-        return request.app.state.templates.TemplateResponse(
+        resp = request.app.state.templates.TemplateResponse(
             request, "room_ended.html", {"room": room}
         )
+        _ensure_session_cookie(request, resp, session_id)
+        return resp
 
     p_result = await db.execute(
         select(Participant).where(
@@ -67,7 +94,7 @@ async def _render_audience_view(
         my_upvotes = [r[0] for r in u_result.all()]
         my_question_ids = [q.id for q in questions if q.participant_id == participant.id]
 
-    return request.app.state.templates.TemplateResponse(
+    resp = request.app.state.templates.TemplateResponse(
         request,
         "audience.html",
         {
@@ -79,6 +106,8 @@ async def _render_audience_view(
             "my_question_ids": my_question_ids,
         },
     )
+    _ensure_session_cookie(request, resp, session_id)
+    return resp
 
 
 @router.get("/r/{code}", response_class=HTMLResponse)
