@@ -15,7 +15,10 @@ COPY app ./app
 COPY static ./static
 COPY templates ./templates
 
+ENV PATH="/app/.venv/bin:${PATH}"
+
 EXPOSE 8000
 
-# Use shell form so $PORT (set by Railway) expands. Fallback to 8000 for local docker.
-CMD uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
+# Invoke uvicorn directly from the prod venv. Avoids `uv run` re-syncing dev deps
+# at container start, which was timing out the healthcheck. $PORT is set by Railway.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
