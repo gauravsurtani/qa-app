@@ -49,6 +49,16 @@ async def test_audience_get_short_url_sets_session_cookie(client):
     assert "qa_session" in r.cookies
 
 
+async def test_join_short_url_alias_works(client):
+    """Belt-and-suspenders: audience clients with cached old JS that POST to
+    /{code}/join (instead of canonical /r/{code}/join) should still succeed.
+    """
+    create = await client.post("/rooms", json={})
+    code = create.json()["code"]
+    r = await client.post(f"/{code}/join", json={"name": "Cached"})
+    assert r.status_code == 204
+
+
 async def test_short_url_join_form_targets_canonical_endpoint(client):
     """Regression: when audience hits the short URL /{code}, the rendered join
     form's JS must POST to /r/{code}/join (canonical), NOT to /{code}/join

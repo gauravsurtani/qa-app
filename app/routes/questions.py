@@ -50,6 +50,7 @@ def _ensure_room_writable(room: Room) -> None:
 
 
 @router.post("/r/{code}/join", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{code}/join", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
 async def join_room(
     code: str,
     body: JoinRequest,
@@ -57,6 +58,10 @@ async def join_room(
     session_id: Annotated[str, Depends(get_or_create_session_id)],
     db: AsyncSession = Depends(get_session),
 ) -> Response:
+    """Audience join. Accepts both /r/{code}/join (canonical) and /{code}/join
+    (alias) so cached clients that derived the URL from the short audience path
+    still work without a forced reload.
+    """
     room = await get_room_by_code(code, db)
     _ensure_room_writable(room)
     p = await get_or_create_participant(room, session_id, body.name, db)
