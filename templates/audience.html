@@ -7,31 +7,56 @@
 
 {% if needs_join %}
 <main style="max-width: 480px; margin: 64px auto; padding: 0 16px;">
-  <h2 style="margin: 0 0 16px;">Join this Q&amp;A</h2>
+  <h2 style="margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.4px;">Join this Q&amp;A</h2>
+  <p class="muted" style="margin: 0 0 20px; font-size: 15px;">Enter your name to start asking and upvoting questions.</p>
   <form id="join-form" style="display: grid; gap: 12px;">
-    <input type="text" name="name" maxlength="40" placeholder="Your name" autofocus required>
-    <button type="submit" class="btn-primary">Continue →</button>
-    <div id="join-error" style="color: var(--dlai-coral-deep); font-size: 14px;"></div>
+    <input type="text" name="name" maxlength="40" placeholder="Your name" autofocus required autocomplete="given-name">
+    <button type="submit" id="join-continue-btn" class="btn-primary" style="height: 48px; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span id="join-continue-label">Continue →</span>
+      <span id="join-continue-spinner" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="animation:spin 700ms linear infinite;">
+          <circle cx="9" cy="9" r="7" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+          <path d="M9 2a7 7 0 0 1 7 7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </span>
+    </button>
+    <div id="join-error" style="color: var(--dlai-coral-deep); font-size: 14px; min-height: 18px;"></div>
   </form>
 </main>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 <script>
 document.getElementById('join-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = e.target.name.value.trim();
   if (!name) return;
+  const btn     = document.getElementById('join-continue-btn');
+  const label   = document.getElementById('join-continue-label');
+  const spinner = document.getElementById('join-continue-spinner');
+  btn.disabled = true;
+  label.style.display = 'none';
+  spinner.style.display = 'block';
   const r = await fetch(window.location.pathname + '/join', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({name}),
   });
-  if (r.ok) window.location.reload();
-  else document.getElementById('join-error').textContent = 'Could not join. Try again.';
+  if (r.ok) {
+    window.location.reload();
+  } else {
+    btn.disabled = false;
+    label.style.display = '';
+    spinner.style.display = 'none';
+    document.getElementById('join-error').textContent = 'Could not join. Try again.';
+  }
 });
 </script>
+
 {% else %}
 <main style="max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 140px;">
   <div class="muted" style="font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-    Asking as: <strong>{{ participant.name }}</strong>
+    Asking as: <strong style="color: var(--slate-700);">{{ participant.name }}</strong>
   </div>
   <div id="pinned-slot"></div>
   <div id="questions-list">
@@ -54,38 +79,76 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; border-top: 1px solid var(--slate-200);
     padding: 12px 16px; box-shadow: var(--shadow-md);">
-  <div style="max-width: 600px; margin: 0 auto; display: flex; gap: 8px;">
+  <div style="max-width: 600px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end;">
     <textarea name="text" placeholder="Ask a question…" maxlength="280" rows="1"
               style="flex: 1; resize: none;"></textarea>
-    <button type="submit" class="btn-primary">Send</button>
+    <button type="submit" id="send-btn" class="btn-primary"
+            style="height: 44px; min-width: 70px; display: flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0;">
+      <span id="send-label">Send</span>
+      <span id="send-spinner" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="animation:spin 700ms linear infinite;">
+          <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+          <path d="M8 2a6 6 0 0 1 6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span id="send-check" style="display:none; font-size:15px;">✓</span>
+    </button>
   </div>
   <div style="max-width: 600px; margin: 4px auto 0; display: flex; justify-content: space-between;">
     <span id="char-count" class="muted" style="font-size: 12px;">0/280</span>
   </div>
 </form>
 
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 <script>
 window.ROOM_CODE = {{ room.code|tojson }};
-const ROOM_CODE = window.ROOM_CODE;
-const composer = document.getElementById('composer');
-const ta = composer.querySelector('textarea');
-const cc = document.getElementById('char-count');
+const ROOM_CODE  = window.ROOM_CODE;
+const composer   = document.getElementById('composer');
+const ta         = composer.querySelector('textarea');
+const cc         = document.getElementById('char-count');
+const sendBtn    = document.getElementById('send-btn');
+const sendLabel  = document.getElementById('send-label');
+const sendSpinner = document.getElementById('send-spinner');
+const sendCheck  = document.getElementById('send-check');
+
 ta.addEventListener('input', () => { cc.textContent = `${ta.value.length}/280`; });
+
+function setSendState(state) {
+  // state: 'idle' | 'loading' | 'success'
+  sendBtn.disabled = state !== 'idle';
+  sendLabel.style.display  = state === 'idle'    ? '' : 'none';
+  sendSpinner.style.display = state === 'loading' ? 'block' : 'none';
+  sendCheck.style.display  = state === 'success'  ? 'block' : 'none';
+  if (state === 'success') sendBtn.style.background = '#22C55E';
+  else sendBtn.style.background = '';
+}
+
 composer.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = ta.value.trim();
   if (!text) return;
-  const r = await fetch(`/r/${ROOM_CODE}/questions`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text}),
-  });
-  if (r.ok) {
-    ta.value = '';
-    cc.textContent = '0/280';
-    // Remove empty state on first question submission
-    const empty = document.getElementById('empty-state-audience');
-    if (empty) empty.remove();
+  setSendState('loading');
+  try {
+    const r = await fetch(`/r/${ROOM_CODE}/questions`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text}),
+    });
+    if (r.ok) {
+      ta.value = '';
+      cc.textContent = '0/280';
+      setSendState('success');
+      setTimeout(() => setSendState('idle'), 900);
+      const empty = document.getElementById('empty-state-audience');
+      if (empty) empty.remove();
+    } else {
+      setSendState('idle');
+    }
+  } catch {
+    setSendState('idle');
   }
 });
 </script>

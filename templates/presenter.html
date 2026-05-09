@@ -7,38 +7,42 @@
     <span id="audience-pill" style="font-size: 13px; opacity: 0.9; display:flex; align-items:center;">
       <span class="audience-dot" aria-hidden="true"></span><span class="audience-count-num">0</span><span> listening</span>
     </span>
-    <a href="/r/{{ room.code }}/host/qr?t={{ token }}" style="color: white; opacity: 0.85;">QR ⊞</a>
-    <a href="/r/{{ room.code }}/export.csv?t={{ token }}" style="color: white; opacity: 0.85;">Download CSV</a>
-    <button class="btn-secondary" onclick="endSession()">End session</button>
+    <a href="/r/{{ room.code }}/host/qr?t={{ token }}" style="color: white; opacity: 0.85; font-size:13px; font-weight:500;">QR ⊞</a>
+    <a href="/r/{{ room.code }}/export.csv?t={{ token }}" style="color: white; opacity: 0.85; font-size:13px; font-weight:500;">CSV ↓</a>
+    <button class="btn-secondary" id="end-session-btn" onclick="endSession()" style="font-size:13px; padding:8px 14px;">End session</button>
   </div>
 </header>
 
-<main style="display: grid; grid-template-columns: 320px 1fr; gap: 24px; padding: 24px; max-width: 1280px; margin: 0 auto;">
+<main style="display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px 24px; max-width: 1280px; margin: 0 auto;">
   <aside>
-    <h2 style="font-size: 14px; text-transform: uppercase; color: var(--slate-500); margin: 0 0 8px;">Answering now</h2>
-    <div id="pinned-slot" class="card" style="min-height: 120px;">
-      <p class="muted" style="margin: 0;">Pin a question to highlight it here.</p>
+    <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Answering now</h2>
+    <div id="pinned-slot" class="card pinned-slot-empty" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in);">
+      <p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>
     </div>
   </aside>
   <section>
-    <h2 style="font-size: 14px; text-transform: uppercase; color: var(--slate-500); margin: 0 0 8px;">Question queue</h2>
+    <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Question queue</h2>
     <div id="questions-list">
       {% for q in questions %}
         <article class="q-card" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
-                 style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
+                 style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; transition: box-shadow 200ms ease, transform 200ms ease; cursor: default;">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 48px; padding: 8px 0; text-align: center; color: var(--slate-700); border: 1px solid var(--slate-200); border-radius: var(--radius-sm);">
-              <div style="font-size: 12px;">▲</div>
-              <div class="upvote-count" style="font-size: 14px; font-weight: 600;">{{ q.upvote_count }}</div>
+            <div style="width: 44px; padding: 8px 0; text-align: center; color: var(--slate-700); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); flex-shrink: 0;">
+              <div style="font-size: 11px;">▲</div>
+              <div class="upvote-count" style="font-size: 14px; font-weight: 700;">{{ q.upvote_count }}</div>
             </div>
             <div style="flex: 1; min-width: 0;">
-              <p style="margin: 0 0 6px; line-height: 1.45;">{{ q.text }}</p>
-              <div class="muted" style="font-size: 12px;">— {{ q.author_name }}</div>
-              <div style="margin-top: 8px; display: flex; gap: 6px;">
-                <button class="btn-secondary action-btn" data-act="state" data-val="pinned" data-id="{{ q.id }}">📌 Pin</button>
-                <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="{{ q.id }}">✓ Answered</button>
-                <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="{{ q.id }}">⊘ Hide</button>
-                <button class="btn-secondary action-btn" data-act="starred" data-val="toggle" data-id="{{ q.id }}">⭐ Star</button>
+              <p style="margin: 0 0 6px; line-height: 1.5; word-wrap: break-word; font-size: 15px;">{{ q.text }}</p>
+              <div class="muted" style="font-size: 12px; margin-bottom: 10px;">— {{ q.author_name }}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn-secondary action-btn" data-act="state" data-val="pinned" data-id="{{ q.id }}"
+                        style="font-size: 12px; padding: 7px 12px; min-height: 32px; border-radius: 8px;">📌 Pin</button>
+                <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="{{ q.id }}"
+                        style="font-size: 12px; padding: 7px 12px; min-height: 32px; border-radius: 8px;">✓ Done</button>
+                <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="{{ q.id }}"
+                        style="font-size: 12px; padding: 7px 12px; min-height: 32px; border-radius: 8px;">⊘ Hide</button>
+                <button class="btn-secondary action-btn" data-act="starred" data-val="toggle" data-id="{{ q.id }}"
+                        style="font-size: 12px; padding: 7px 12px; min-height: 32px; border-radius: 8px;">⭐ Star</button>
               </div>
             </div>
           </div>
@@ -50,7 +54,7 @@
         <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--slate-700);">Waiting for the first question…</p>
         <p class="muted" style="margin: 0; font-size: 14px;">
           Your audience is at
-          <code style="background: var(--slate-100); padding: 2px 6px; border-radius: 4px;">/r/{{ room.code }}</code>
+          <code style="background: var(--slate-100); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">/r/{{ room.code }}</code>
           &middot; Code <strong>{{ room.code }}</strong>
         </p>
       </div>
@@ -59,15 +63,41 @@
   </section>
 </main>
 
+<style>
+/* Pinned slot states */
+.pinned-slot-empty {
+  border: 2px dashed var(--slate-200) !important;
+  background: var(--slate-50) !important;
+}
+.pinned-slot-active {
+  border: 1px solid rgba(246, 91, 102, 0.3) !important;
+  box-shadow: 0 0 24px rgba(246, 91, 102, 0.18), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Card hover lift — only for presenter cards (actionable) */
+.q-card:hover {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+  cursor: pointer;
+}
+.q-card:hover .action-btn {
+  opacity: 1;
+}
+
+@media (min-width: 768px) {
+  .action-btn .btn-label { display: inline; }
+}
+</style>
+
 <script>
 window.ROOM_CODE = {{ room.code|tojson }};
 window.PRESENTER_TOKEN = {{ token|tojson }};
 
 const TOAST_MESSAGES = {
-  pinned: 'Pinned',
+  pinned:   'Pinned ↑',
   answered: 'Marked answered',
-  hidden: 'Hidden',
-  starred: 'Starred',
+  hidden:   'Hidden',
+  starred:  'Starred ⭐',
 };
 
 document.addEventListener('click', async (e) => {
@@ -84,10 +114,10 @@ document.addEventListener('click', async (e) => {
   if (btn.dataset.act === 'starred') {
     const card = document.getElementById('q-' + id);
     body.starred = !card.dataset.starred || card.dataset.starred === 'false';
-    toastMsg = 'Starred';
+    toastMsg = body.starred ? 'Starred ⭐' : 'Unstarred';
   }
 
-  // Button flash — item #9
+  // Button flash
   btn.classList.add('btn-flashing');
   setTimeout(() => btn.classList.remove('btn-flashing'), 280);
 
@@ -101,14 +131,35 @@ document.addEventListener('click', async (e) => {
     window.showToast(toastMsg, 'success');
   }
 
-  // Remove empty state once a question exists
-  const empty = document.getElementById('empty-state-presenter');
-  if (empty && document.querySelectorAll('#questions-list .q-card').length > 0) {
-    empty.remove();
+  // Pinned slot glow
+  if (r.ok && btn.dataset.act === 'state' && btn.dataset.val === 'pinned') {
+    const slot = document.getElementById('pinned-slot');
+    slot.classList.remove('pinned-slot-empty');
+    slot.classList.add('pinned-slot-active');
+    const card = document.getElementById('q-' + id);
+    if (card) {
+      const text = card.querySelector('p')?.textContent || '';
+      const author = card.querySelector('.muted')?.textContent || '';
+      const votes = card.querySelector('.upvote-count')?.textContent || '0';
+      slot.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:40px;padding:6px 0;text-align:center;color:var(--dlai-coral);border:1px solid rgba(246,91,102,0.25);border-radius:var(--radius-sm);flex-shrink:0;">
+            <div style="font-size:10px;">▲</div>
+            <div style="font-size:13px;font-weight:700;">${votes}</div>
+          </div>
+          <div>
+            <p style="margin:0 0 6px;font-size:14px;line-height:1.5;color:var(--slate-900);">${text}</p>
+            <div class="muted" style="font-size:12px;">${author}</div>
+          </div>
+        </div>`;
+    }
   }
+
+  const empty = document.getElementById('empty-state-presenter');
+  if (empty && document.querySelectorAll('#questions-list .q-card').length > 0) empty.remove();
 });
 
-// Remove empty state on first SSE question.created
+// Remove empty state on first SSE question
 document.addEventListener('DOMContentLoaded', () => {
   const list = document.getElementById('questions-list');
   if (!list) return;
@@ -120,17 +171,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function endSession() {
-  if (!confirm("End this session? Audience won't be able to ask new questions. You can still download the CSV for the next 24 hours.")) return;
+  const confirmed = await window.showModal({
+    title: 'End this session?',
+    body: "Audience won't be able to ask new questions. You can still download the CSV for the next 24 hours.",
+    confirmLabel: 'End session',
+    cancelLabel: 'Keep going',
+    danger: true,
+  });
+  if (!confirmed) return;
+
   const r = await fetch(`/r/${window.ROOM_CODE}/end?t=${window.PRESENTER_TOKEN}`, { method: 'POST' });
   if (r.ok) {
-    if (confirm('Session ended. Download your questions as CSV now?')) {
+    const download = await window.showModal({
+      title: 'Session ended',
+      body: 'Download your questions as a CSV now?',
+      confirmLabel: 'Download CSV',
+      cancelLabel: 'Maybe later',
+      danger: false,
+    });
+    if (download) {
       window.location.href = `/r/${window.ROOM_CODE}/export.csv?t=${window.PRESENTER_TOKEN}`;
     }
   } else {
-    alert('Could not end session.');
+    await window.showAlert({
+      title: 'Could not end session',
+      body: 'Something went wrong. Please try again.',
+      closeLabel: 'OK',
+    });
   }
 }
 </script>
+<script src="/static/js/modal.js" defer></script>
 <script src="/static/js/toast.js" defer></script>
 <script src="/static/js/avatar.js" defer></script>
 <script src="/static/js/shortcuts.js" defer></script>
