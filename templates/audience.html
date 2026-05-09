@@ -101,7 +101,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
       {% set upvoted = q.id in my_upvotes %}
       {% set is_mine = q.id in my_question_ids %}
       {% set is_new = false %}
-      {% if q.state.value == 'answered' %}
+      {% if q.state == 'answered' %}
       <article class="q-card q-card-answered" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
                style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
         <div style="display: flex; gap: 12px; align-items: flex-start;">
