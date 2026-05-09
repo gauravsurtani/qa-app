@@ -57,6 +57,21 @@ async def _sweep_loop() -> None:
 
 app = FastAPI(title="AskUp", lifespan=lifespan)
 
+
+@app.middleware("http")
+async def static_cache_control(request, call_next):
+    """Make /static/* always revalidate with the server. Browsers without an
+    explicit Cache-Control header default to heuristic caching, which can serve
+    stale CSS/JS for hours after a deploy. We send `no-cache` so the browser
+    issues a conditional GET on every request — fast (304) when unchanged,
+    fresh on the first request after any deploy.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 _BASE = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=_BASE / "static"), name="static")
 templates = Jinja2Templates(directory=_BASE / "templates")
