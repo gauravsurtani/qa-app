@@ -69,6 +69,43 @@
   function updateCount(qid, count) {
     const el = document.querySelector('#q-' + qid + ' .upvote-count');
     rollCount(el, count);
+    flipReorderQueue();
+  }
+
+  /* ── FLIP reorder when ranks change — item #10 ───────── */
+  let _reorderRaf = 0;
+  function flipReorderQueue() {
+    if (!list) return;
+    if (_reorderRaf) return;
+    _reorderRaf = requestAnimationFrame(() => {
+      _reorderRaf = 0;
+      const cards = Array.from(list.querySelectorAll(':scope > .q-card'));
+      if (cards.length < 2) return;
+      const firstRects = new Map(cards.map(c => [c, c.getBoundingClientRect()]));
+      const sorted = cards.slice().sort((a, b) => {
+        const av = parseInt(a.querySelector('.upvote-count')?.textContent || '0', 10);
+        const bv = parseInt(b.querySelector('.upvote-count')?.textContent || '0', 10);
+        if (bv !== av) return bv - av;
+        return cards.indexOf(a) - cards.indexOf(b);
+      });
+      const orderUnchanged = sorted.every((c, i) => c === cards[i]);
+      if (orderUnchanged) return;
+      sorted.forEach(c => list.appendChild(c));
+      sorted.forEach(c => {
+        const first = firstRects.get(c);
+        const last = c.getBoundingClientRect();
+        const dy = first.top - last.top;
+        if (dy === 0) return;
+        c.style.transform = `translateY(${dy}px)`;
+        c.style.transition = 'transform 0s';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            c.style.transition = 'transform 320ms cubic-bezier(0.32, 0.72, 0, 1)';
+            c.style.transform = '';
+          });
+        });
+      });
+    });
   }
 
   function handleEvent(type, data) {
