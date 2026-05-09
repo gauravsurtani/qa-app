@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/motion@10.18.0/dist/motion.min.js"></script>
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   {% block body %}{% endblock %}
   {% block footer %}
   <footer class="app-footer">

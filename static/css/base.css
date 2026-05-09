@@ -97,6 +97,24 @@ input::placeholder, textarea::placeholder { color: var(--slate-400); }
   color: var(--slate-500);
   font-size: 13px;
 }
+
+/* Sticky-footer layout for the homepage. Body becomes a flex column whose main
+ * content grows to fill, pushing the footer to the bottom of the viewport when
+ * content is short. position:fixed decorations don't participate in flex, so
+ * the gradient orbs and dotted grid still cover the full viewport. */
+body.is-home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body.is-home > main {
+  flex: 1;
+  margin-top: 72px;   /* preserve existing breathing room above the hero */
+  margin-bottom: 24px; /* small gap before the footer */
+}
+body.is-home > .app-footer {
+  padding: 24px 16px 32px;
+}
 .app-footer .heart {
   color: var(--dlai-coral);
   display: inline-block;
