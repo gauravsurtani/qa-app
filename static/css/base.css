@@ -108,3 +108,14 @@ input::placeholder, textarea::placeholder { color: var(--slate-400); }
 }
 .app-footer .links { margin-top: 8px; }
 .app-footer .links a { color: var(--slate-500); margin: 0 6px; }
+.app-footer .author-link {
+  color: var(--slate-700);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--slate-200);
+  transition: color 140ms var(--easing-in), border-color 140ms var(--easing-in);
+}
+.app-footer .author-link:hover {
+  color: var(--dlai-coral);
+  border-bottom-color: var(--dlai-coral);
+}
