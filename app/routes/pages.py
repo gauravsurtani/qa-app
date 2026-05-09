@@ -94,6 +94,9 @@ async def _render_audience_view(
         my_upvotes = [r[0] for r in u_result.all()]
         my_question_ids = [q.id for q in questions if q.participant_id == participant.id]
 
+    pinned_q = next((q for q in questions if q.state == QuestionState.PINNED), None)
+    queue_qs = [q for q in questions if q.state != QuestionState.PINNED]
+
     resp = request.app.state.templates.TemplateResponse(
         request,
         "audience.html",
@@ -102,6 +105,8 @@ async def _render_audience_view(
             "participant": participant,
             "needs_join": needs_join,
             "questions": questions,
+            "pinned_q": pinned_q,
+            "queue_qs": queue_qs,
             "my_upvotes": my_upvotes,
             "my_question_ids": my_question_ids,
         },
@@ -139,9 +144,9 @@ async def presenter_view(
         .where(Question.room_id == room.id)
         .order_by(Question.upvote_count.desc(), Question.created_at.desc())
     )
-    questions = q_result.scalars().all()
+    all_questions = list(q_result.scalars().all())
 
-    if not questions and v != "live":
+    if not all_questions and v != "live":
         return request.app.state.templates.TemplateResponse(
             request,
             "presenter_share.html",
@@ -153,10 +158,13 @@ async def presenter_view(
             },
         )
 
+    pinned_q = next((q for q in all_questions if q.state == QuestionState.PINNED), None)
+    queue_qs = [q for q in all_questions if q.state != QuestionState.PINNED and q.state != QuestionState.HIDDEN]
+
     return request.app.state.templates.TemplateResponse(
         request,
         "presenter.html",
-        {"room": room, "token": t, "questions": questions},
+        {"room": room, "token": t, "questions": all_questions, "pinned_q": pinned_q, "queue_qs": queue_qs},
     )
 
 

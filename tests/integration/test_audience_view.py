@@ -90,3 +90,21 @@ async def test_audience_get_does_not_overwrite_existing_cookie(client):
     assert r2.status_code == 200
     # AsyncClient won't expose Set-Cookie if not present, so absence is the test
     assert "qa_session" not in r2.cookies or r2.cookies["qa_session"] == cookie
+
+
+async def test_audience_renders_pinned_question_in_slot(client):
+    create = await client.post("/rooms", json={})
+    body = create.json()
+    code = body["code"]
+    token = body["presenter_url"].split("t=")[1]
+    await client.post(f"/r/{code}/join", json={"name": "Bob"})
+    q = await client.post(f"/r/{code}/questions", json={"text": "answering now?"})
+    qid = q.json()["id"]
+    await client.patch(f"/r/{code}/questions/{qid}?t={token}", json={"state": "pinned"})
+
+    r = await client.get(f"/r/{code}")
+    assert r.status_code == 200
+    # Pinned card rendered with answering-now label and coral styling
+    assert "Answering now" in r.text or "pinned-slot-label" in r.text
+    assert "answering now?" in r.text
+    assert "q-card-pinned" in r.text

@@ -62,14 +62,70 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
   <div class="muted" style="font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
     Asking as: <strong style="color: var(--slate-700);">{{ participant.name }}</strong>
   </div>
+  {% if pinned_q %}
+  <div id="pinned-slot" style="margin-bottom: 16px;">
+    <div class="pinned-slot-label">Answering now</div>
+    {% set q = pinned_q %}
+    {% set upvoted = pinned_q.id in my_upvotes %}
+    {% set is_mine = pinned_q.id in my_question_ids %}
+    <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}"
+             style="background: white; border: 1px solid rgba(246,91,102,0.35); border-radius: var(--radius-md);
+                    padding: 14px; margin-bottom: 0; box-shadow: 0 0 18px rgba(246,91,102,0.18);">
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <button class="upvote-btn"
+                data-action="upvote"
+                data-id="{{ pinned_q.id }}"
+                style="background: {% if upvoted %}var(--dlai-coral){% else %}white{% endif %};
+                       color: {% if upvoted %}white{% else %}var(--slate-500){% endif %};
+                       border: 1px solid var(--slate-200);
+                       width: 48px; padding: 8px 0;
+                       display: flex; flex-direction: column; align-items: center;
+                       border-radius: var(--radius-sm);">
+          <span style="font-size: 12px;">▲</span>
+          <span class="upvote-count" style="font-size: 14px; font-weight: 600;">{{ pinned_q.upvote_count }}</span>
+        </button>
+        <div style="flex: 1; min-width: 0;">
+          <p style="margin: 0 0 6px; line-height: 1.45; word-wrap: break-word;">{{ pinned_q.text }}</p>
+          <div class="muted" style="font-size: 12px;">
+            — {{ pinned_q.author_name }}{% if is_mine %} <span style="color: var(--dlai-teal); font-weight: 600;">(you)</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+  {% else %}
   <div id="pinned-slot"></div>
+  {% endif %}
   <div id="questions-list">
-    {% for q in questions %}
+    {% for q in queue_qs %}
       {% set upvoted = q.id in my_upvotes %}
       {% set is_mine = q.id in my_question_ids %}
+      {% set is_new = false %}
+      {% if q.state.value == 'answered' %}
+      <article class="q-card q-card-answered" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
+               style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <button class="upvote-btn" data-action="upvote" data-id="{{ q.id }}"
+                  style="background: {% if upvoted %}var(--dlai-coral){% else %}white{% endif %};
+                         color: {% if upvoted %}white{% else %}var(--slate-500){% endif %};
+                         border: 1px solid var(--slate-200); width: 48px; padding: 8px 0;
+                         display: flex; flex-direction: column; align-items: center; border-radius: var(--radius-sm);">
+            <span style="font-size: 12px;">▲</span>
+            <span class="upvote-count" style="font-size: 14px; font-weight: 600;">{{ q.upvote_count }}</span>
+          </button>
+          <div style="flex: 1; min-width: 0;">
+            <p style="margin: 0 0 6px; line-height: 1.45; word-wrap: break-word;">{{ q.text }}</p>
+            <div class="muted" style="font-size: 12px;">
+              — {{ q.author_name }}{% if is_mine %} <span style="color: var(--dlai-teal); font-weight: 600;">(you)</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </article>
+      {% else %}
       {% include "partials/question_card.html" %}
+      {% endif %}
     {% endfor %}
-    {% if not questions %}
+    {% if not queue_qs and not pinned_q %}
     <div id="empty-state-audience" style="padding: 64px 0; text-align: center;" aria-live="polite">
       <div style="font-size: 32px; margin-bottom: 12px;">👋</div>
       <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--slate-700);">Be the first to ask</p>

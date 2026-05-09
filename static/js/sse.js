@@ -4,7 +4,7 @@
 
   let backoff = 1000;
   const list = document.getElementById('questions-list');
-  const pinned = document.getElementById('pinned-slot');
+  const isPresenter = !!window.PRESENTER_TOKEN;
 
   /* ── FLIP helper — item #2 ───────────────────────────── */
   function flipMove(card, newParent, prepend) {
@@ -46,20 +46,50 @@
   function appendQuestion(q, isNew) {
     if (!list || document.getElementById('q-' + q.id)) return;
     const tmpl = document.createElement('template');
-    tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}"
-      style="background:white;border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
-      <div style="display:flex;gap:12px;align-items:flex-start;">
-        <button class="upvote-btn" data-action="upvote" data-id="${q.id}"
-          style="background:white;color:var(--slate-500);border:1px solid var(--slate-200);width:48px;padding:8px 0;display:flex;flex-direction:column;align-items:center;border-radius:var(--radius-sm);">
-          <span style="font-size:12px;">▲</span>
-          <span class="upvote-count" style="font-size:14px;font-weight:600;">${q.upvote_count}</span>
-        </button>
-        <div style="flex:1;min-width:0;">
-          <p style="margin:0 0 6px;line-height:1.45;word-wrap:break-word;"></p>
-          <div class="muted" style="font-size:12px;">— <span class="author"></span></div>
+
+    if (isPresenter) {
+      // Full presenter card with 4 action buttons
+      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}"
+        style="background:white;border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;transition:box-shadow 200ms ease,transform 200ms ease;cursor:default;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:44px;padding:8px 0;text-align:center;color:var(--slate-700);border:1px solid var(--slate-200);border-radius:var(--radius-sm);flex-shrink:0;">
+            <div style="font-size:11px;">▲</div>
+            <div class="upvote-count" style="font-size:14px;font-weight:700;">${q.upvote_count}</div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="margin:0 0 6px;line-height:1.5;word-wrap:break-word;font-size:15px;"></p>
+            <div class="muted" style="font-size:12px;margin-bottom:10px;">— <span class="author"></span></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn-secondary action-btn" data-act="state" data-val="pinned" data-id="${q.id}"
+                      style="font-size:12px;padding:7px 12px;min-height:32px;border-radius:8px;">📌 Pin</button>
+              <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="${q.id}"
+                      style="font-size:12px;padding:7px 12px;min-height:32px;border-radius:8px;">✓ Done</button>
+              <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="${q.id}"
+                      style="font-size:12px;padding:7px 12px;min-height:32px;border-radius:8px;">⊘ Hide</button>
+              <button class="btn-secondary action-btn" data-act="starred" data-val="toggle" data-id="${q.id}"
+                      style="font-size:12px;padding:7px 12px;min-height:32px;border-radius:8px;">⭐ Star</button>
+            </div>
+          </div>
         </div>
-      </div>
-    </article>`;
+      </article>`;
+    } else {
+      // Audience card with upvote button only
+      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}"
+        style="background:white;border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <button class="upvote-btn" data-action="upvote" data-id="${q.id}"
+            style="background:white;color:var(--slate-500);border:1px solid var(--slate-200);width:48px;padding:8px 0;display:flex;flex-direction:column;align-items:center;border-radius:var(--radius-sm);">
+            <span style="font-size:12px;">▲</span>
+            <span class="upvote-count" style="font-size:14px;font-weight:600;">${q.upvote_count}</span>
+          </button>
+          <div style="flex:1;min-width:0;">
+            <p style="margin:0 0 6px;line-height:1.45;word-wrap:break-word;"></p>
+            <div class="muted" style="font-size:12px;">— <span class="author"></span></div>
+          </div>
+        </div>
+      </article>`;
+    }
+
     const el = tmpl.content.firstElementChild;
     el.querySelector('p').textContent = q.text;
     el.querySelector('.author').textContent = q.author_name;
@@ -114,21 +144,47 @@
     else if (type === 'question.state_changed') {
       const card = document.getElementById('q-' + data.id);
       if (!card) return;
+
+      // Apply / strip answered styling
+      card.classList.toggle('q-card-answered', data.state === 'answered');
+
       if (data.state === 'hidden') {
         card.remove();
-      } else if (data.state === 'pinned') {
-        const slot = document.getElementById('pinned-slot');
-        if (slot) {
-          slot.innerHTML = '';
-          card.classList.remove('q-card-new');
-          flipMove(card, slot, false);
+        return;
+      }
+
+      const slot = document.getElementById('pinned-slot');
+
+      if (data.state === 'pinned' && slot) {
+        if (slot.contains(card)) return; // already there
+        // Move whatever else is in the slot back to queue
+        const existing = slot.querySelector('.q-card');
+        if (existing && list) {
+          existing.classList.remove('q-card-pinned');
+          flipMove(existing, list, true);
+        } else {
+          // Clear any empty-state placeholder text
+          const placeholder = slot.querySelector('p.muted');
+          if (placeholder) placeholder.remove();
         }
-      } else if (data.state === 'live') {
-        const slot = document.getElementById('pinned-slot');
-        if (slot && slot.contains(card)) {
-          if (list) flipMove(card, list, true);
-          else slot.removeChild(card);
+        slot.classList.remove('pinned-slot-empty');
+        slot.classList.add('pinned-slot-active');
+        card.classList.add('q-card-pinned');
+        flipMove(card, slot, false);
+        return;
+      }
+
+      if ((data.state === 'live' || data.state === 'answered') && slot && slot.contains(card)) {
+        // Un-pin: move back to top of queue
+        card.classList.remove('q-card-pinned');
+        if (list) flipMove(card, list, true);
+        else slot.removeChild(card);
+        if (!slot.querySelector('.q-card')) {
+          slot.classList.remove('pinned-slot-active');
+          slot.classList.add('pinned-slot-empty');
+          slot.innerHTML = '<p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>';
         }
+        return;
       }
     }
     else if (type === 'audience.count') {

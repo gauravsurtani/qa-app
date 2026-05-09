@@ -16,15 +16,41 @@
 <main style="display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px 24px; max-width: 1280px; margin: 0 auto;">
   <aside>
     <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Answering now</h2>
+    {% if pinned_q %}
+    <div id="pinned-slot" class="card pinned-slot-active" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in);">
+      <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}"
+               style="background: white; border-radius: var(--radius-md); margin-bottom: 0; cursor: default;">
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+          <div style="width: 36px; padding: 6px 0; text-align: center; color: var(--dlai-coral); border: 1px solid rgba(246,91,102,0.25); border-radius: var(--radius-sm); flex-shrink: 0;">
+            <div style="font-size: 10px;">▲</div>
+            <div class="upvote-count" style="font-size: 13px; font-weight: 700;">{{ pinned_q.upvote_count }}</div>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <p style="margin: 0 0 6px; line-height: 1.45; word-wrap: break-word; font-size: 14px;">{{ pinned_q.text }}</p>
+            <div class="muted" style="font-size: 12px; margin-bottom: 8px;">— {{ pinned_q.author_name }}</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="{{ pinned_q.id }}"
+                      style="font-size: 11px; padding: 5px 10px; min-height: 28px; border-radius: 8px;">✓ Done</button>
+              <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="{{ pinned_q.id }}"
+                      style="font-size: 11px; padding: 5px 10px; min-height: 28px; border-radius: 8px;">⊘ Hide</button>
+              <button class="btn-secondary action-btn" data-act="starred" data-val="toggle" data-id="{{ pinned_q.id }}"
+                      style="font-size: 11px; padding: 5px 10px; min-height: 28px; border-radius: 8px;">⭐ Star</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+    {% else %}
     <div id="pinned-slot" class="card pinned-slot-empty" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in);">
       <p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>
     </div>
+    {% endif %}
   </aside>
   <section>
     <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Question queue</h2>
     <div id="questions-list">
-      {% for q in questions %}
-        <article class="q-card" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
+      {% for q in queue_qs %}
+        <article class="q-card {% if q.state.value == 'answered' %}q-card-answered{% endif %}" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
                  style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; transition: box-shadow 200ms ease, transform 200ms ease; cursor: default;">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <div style="width: 44px; padding: 8px 0; text-align: center; color: var(--slate-700); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); flex-shrink: 0;">
@@ -48,7 +74,7 @@
           </div>
         </article>
       {% endfor %}
-      {% if not questions %}
+      {% if not queue_qs and not pinned_q %}
       <div id="empty-state-presenter" style="padding: 64px 0; text-align: center;" aria-live="polite">
         <div style="font-size: 28px; margin-bottom: 12px;">⏳</div>
         <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--slate-700);">Waiting for the first question…</p>
@@ -131,27 +157,12 @@ document.addEventListener('click', async (e) => {
     window.showToast(toastMsg, 'success');
   }
 
-  // Pinned slot glow
+  // Pinned slot glow — instant visual feedback; SSE drives the actual card move
   if (r.ok && btn.dataset.act === 'state' && btn.dataset.val === 'pinned') {
     const slot = document.getElementById('pinned-slot');
-    slot.classList.remove('pinned-slot-empty');
-    slot.classList.add('pinned-slot-active');
-    const card = document.getElementById('q-' + id);
-    if (card) {
-      const text = card.querySelector('p')?.textContent || '';
-      const author = card.querySelector('.muted')?.textContent || '';
-      const votes = card.querySelector('.upvote-count')?.textContent || '0';
-      slot.innerHTML = `
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:40px;padding:6px 0;text-align:center;color:var(--dlai-coral);border:1px solid rgba(246,91,102,0.25);border-radius:var(--radius-sm);flex-shrink:0;">
-            <div style="font-size:10px;">▲</div>
-            <div style="font-size:13px;font-weight:700;">${votes}</div>
-          </div>
-          <div>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.5;color:var(--slate-900);">${text}</p>
-            <div class="muted" style="font-size:12px;">${author}</div>
-          </div>
-        </div>`;
+    if (slot) {
+      slot.classList.remove('pinned-slot-empty');
+      slot.classList.add('pinned-slot-active');
     }
   }
 
