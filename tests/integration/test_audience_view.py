@@ -49,6 +49,26 @@ async def test_audience_get_short_url_sets_session_cookie(client):
     assert "qa_session" in r.cookies
 
 
+async def test_short_url_join_form_targets_canonical_endpoint(client):
+    """Regression: when audience hits the short URL /{code}, the rendered join
+    form's JS must POST to /r/{code}/join (canonical), NOT to /{code}/join
+    (which doesn't exist). Visiting via the short URL previously broke the
+    join flow because the JS used window.location.pathname + '/join'.
+    """
+    create = await client.post("/rooms", json={})
+    code = create.json()["code"]
+    r = await client.get(f"/{code}")
+    assert r.status_code == 200
+    # Rendered HTML must reference the canonical /r/<CODE>/join path. The
+    # current template builds it via `'/r/' + "<CODE>" + '/join'` so we look
+    # for the JOIN_URL declaration plus the room code as separate fragments.
+    assert "JOIN_URL" in r.text
+    assert "'/r/'" in r.text
+    assert f'"{code}"' in r.text
+    # And it must NOT use the broken `window.location.pathname + '/join'` shape
+    assert "window.location.pathname + '/join'" not in r.text
+
+
 async def test_audience_get_does_not_overwrite_existing_cookie(client):
     create = await client.post("/rooms", json={})
     code = create.json()["code"]

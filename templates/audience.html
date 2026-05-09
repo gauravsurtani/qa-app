@@ -27,6 +27,10 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <script>
+// Always POST to the canonical /r/{code}/join endpoint regardless of whether the
+// user landed via the short URL `/CODE` or the long URL `/r/CODE`.
+const JOIN_URL = '/r/' + {{ room.code|tojson }} + '/join';
+
 document.getElementById('join-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = e.target.name.value.trim();
@@ -37,7 +41,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
   btn.disabled = true;
   label.style.display = 'none';
   spinner.style.display = 'block';
-  const r = await fetch(window.location.pathname + '/join', {
+  const r = await fetch(JOIN_URL, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({name}),
