@@ -29,6 +29,8 @@
             <p style="margin: 0 0 6px; line-height: 1.45; word-wrap: break-word; font-size: 14px;">{{ pinned_q.text }}</p>
             <div class="muted" style="font-size: 12px; margin-bottom: 8px;">— {{ pinned_q.author_name }}</div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn-secondary action-btn" data-act="state" data-val="pinned" data-id="{{ pinned_q.id }}"
+                      style="font-size: 11px; padding: 5px 10px; min-height: 28px; border-radius: 8px;">📌 Pin</button>
               <button class="btn-secondary action-btn" data-act="state" data-val="answered" data-id="{{ pinned_q.id }}"
                       style="font-size: 11px; padding: 5px 10px; min-height: 28px; border-radius: 8px;">✓ Done</button>
               <button class="btn-secondary action-btn" data-act="state" data-val="hidden" data-id="{{ pinned_q.id }}"

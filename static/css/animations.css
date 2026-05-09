@@ -136,6 +136,10 @@ a[href*="qr"]:hover {
 .q-card-pinned p { font-size: 14px !important; line-height: 1.45 !important; }
 .q-card-pinned .upvote-count { font-size: 13px !important; }
 .q-card-pinned .upvote-btn { width: 36px !important; padding: 6px 0 !important; }
+/* Hide the "Pin" button when card is already pinned — it'd be a no-op.
+ * The button is still in the DOM, so when SSE moves the card back to the
+ * queue (state change to live/answered), the Pin button reappears via CSS. */
+.q-card-pinned [data-act="state"][data-val="pinned"] { display: none !important; }
 
 /* ── Answered card variant ───────────────────────────────── */
 .q-card-answered {
