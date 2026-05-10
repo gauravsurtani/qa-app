@@ -5,8 +5,15 @@ async def test_presenter_share_screen_first_load(client):
     token = body["presenter_url"].split("t=")[1]
     r = await client.get(f"/r/{code}/host?t={token}")
     assert r.status_code == 200
-    assert "Share with your audience" in r.text
+    # Share-screen anchors: eyebrow heading + the room code as hero
+    assert "Share to join" in r.text
     assert code in r.text
+    # Three primary actions are present
+    assert "Project" in r.text
+    assert "Copy link" in r.text
+    assert "Open dashboard" in r.text
+    # Bookmark warning is still there, just smaller
+    assert "Bookmark this page" in r.text
 
 
 async def test_presenter_wrong_token_redirects(client):
