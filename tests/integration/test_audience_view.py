@@ -79,6 +79,31 @@ async def test_short_url_join_form_targets_canonical_endpoint(client):
     assert "window.location.pathname + '/join'" not in r.text
 
 
+async def test_answered_questions_sink_to_bottom_of_queue(client):
+    """Answered questions render at the bottom of the queue regardless of upvote count.
+    Live questions stay sorted by upvote_count desc above them.
+    """
+    create = await client.post("/rooms", json={})
+    body = create.json()
+    code = body["code"]
+    token = body["presenter_url"].split("t=")[1]
+
+    await client.post(f"/r/{code}/join", json={"name": "A"})
+    q1 = (await client.post(f"/r/{code}/questions", json={"text": "alpha"})).json()["id"]
+    q2 = (await client.post(f"/r/{code}/questions", json={"text": "bravo"})).json()["id"]
+    q3 = (await client.post(f"/r/{code}/questions", json={"text": "charlie"})).json()["id"]
+
+    # Mark alpha (the first asked) as answered; it should drop to the bottom.
+    await client.patch(f"/r/{code}/questions/{q1}?t={token}", json={"state": "answered"})
+
+    r = await client.get(f"/r/{code}")
+    body = r.text
+    # alpha (answered) must come AFTER charlie (live, newer) in document order.
+    assert body.index("charlie") < body.index("alpha")
+    # And bravo (live) must also come before alpha.
+    assert body.index("bravo") < body.index("alpha")
+
+
 async def test_audience_get_does_not_overwrite_existing_cookie(client):
     create = await client.post("/rooms", json={})
     code = create.json()["code"]

@@ -95,7 +95,10 @@ async def _render_audience_view(
         my_question_ids = [q.id for q in questions if q.participant_id == participant.id]
 
     pinned_q = next((q for q in questions if q.state == QuestionState.PINNED), None)
-    queue_qs = [q for q in questions if q.state != QuestionState.PINNED]
+    # Answered questions sink to the bottom of the queue regardless of upvote count.
+    queue_live = [q for q in questions if q.state not in (QuestionState.PINNED, QuestionState.ANSWERED)]
+    queue_answered = [q for q in questions if q.state == QuestionState.ANSWERED]
+    queue_qs = queue_live + queue_answered
 
     resp = request.app.state.templates.TemplateResponse(
         request,
@@ -159,7 +162,10 @@ async def presenter_view(
         )
 
     pinned_q = next((q for q in all_questions if q.state == QuestionState.PINNED), None)
-    queue_qs = [q for q in all_questions if q.state != QuestionState.PINNED and q.state != QuestionState.HIDDEN]
+    # Queue: live first (sorted by upvotes desc), then answered at the bottom.
+    queue_live = [q for q in all_questions if q.state == QuestionState.LIVE]
+    queue_answered = [q for q in all_questions if q.state == QuestionState.ANSWERED]
+    queue_qs = queue_live + queue_answered
 
     return request.app.state.templates.TemplateResponse(
         request,

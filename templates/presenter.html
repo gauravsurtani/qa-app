@@ -184,6 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function endSession() {
+  const endBtn = document.getElementById('end-session-btn');
+  if (endBtn?.disabled) return;
   const confirmed = await window.showModal({
     title: 'End this session?',
     body: "Audience won't be able to ask new questions. You can still download the CSV for the next 24 hours.",
@@ -192,6 +194,7 @@ async function endSession() {
     danger: true,
   });
   if (!confirmed) return;
+  if (endBtn) { endBtn.disabled = true; endBtn.style.opacity = '0.55'; }
 
   const r = await fetch(`/r/${window.ROOM_CODE}/end?t=${window.PRESENTER_TOKEN}`, { method: 'POST' });
   if (r.ok) {

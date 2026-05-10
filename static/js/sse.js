@@ -174,7 +174,7 @@
         return;
       }
 
-      if ((data.state === 'live' || data.state === 'answered') && slot && slot.contains(card)) {
+      if (data.state === 'live' && slot && slot.contains(card)) {
         // Un-pin: move back to top of queue
         card.classList.remove('q-card-pinned');
         if (list) flipMove(card, list, true);
@@ -183,6 +183,24 @@
           slot.classList.remove('pinned-slot-active');
           slot.classList.add('pinned-slot-empty');
           slot.innerHTML = '<p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>';
+        }
+        return;
+      }
+
+      if (data.state === 'answered') {
+        // Answered questions sink to the bottom of the queue regardless of where
+        // they came from (slot or anywhere in the list). FLIP animates the move.
+        if (slot && slot.contains(card)) {
+          card.classList.remove('q-card-pinned');
+          if (list) flipMove(card, list, false /* append */);
+          if (slot && !slot.querySelector('.q-card')) {
+            slot.classList.remove('pinned-slot-active');
+            slot.classList.add('pinned-slot-empty');
+            slot.innerHTML = '<p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>';
+          }
+        } else if (list && list.contains(card)) {
+          // Move within the queue to the bottom
+          flipMove(card, list, false /* append */);
         }
         return;
       }
@@ -210,7 +228,32 @@
       }
     }
     else if (type === 'room.closed') {
-      window.location.reload();
+      // Audience reloads to land on the "Q&A ended" page. Presenters stay put —
+      // they triggered the close and have a "Download CSV?" modal flow that the
+      // reload would otherwise interrupt mid-display. Show them a banner instead.
+      if (window.PRESENTER_TOKEN) {
+        if (!document.getElementById('ended-banner')) {
+          const banner = document.createElement('div');
+          banner.id = 'ended-banner';
+          banner.style.cssText =
+            'background:var(--slate-100);border-bottom:1px solid var(--slate-200);' +
+            'padding:10px 16px;text-align:center;font-size:13px;color:var(--slate-700);';
+          banner.innerHTML =
+            '<strong>Session ended.</strong> Audience can no longer ask. ' +
+            'CSV available for 24h.';
+          const header = document.querySelector('.app-header');
+          if (header && header.parentNode) {
+            header.parentNode.insertBefore(banner, header.nextSibling);
+          } else {
+            document.body.prepend(banner);
+          }
+        }
+        // Disable the End-session button
+        const endBtn = document.getElementById('end-session-btn');
+        if (endBtn) { endBtn.disabled = true; endBtn.style.opacity = '0.55'; endBtn.textContent = 'Ended'; }
+      } else {
+        window.location.reload();
+      }
     }
   }
 
