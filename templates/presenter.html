@@ -18,7 +18,7 @@
     <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Answering now</h2>
     {% if pinned_q %}
     <div id="pinned-slot" class="card pinned-slot-active" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in);">
-      <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}"
+      <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}" data-upvotes="{{ pinned_q.upvote_count }}"
                style="background: white; border-radius: var(--radius-md); margin-bottom: 0; cursor: default;">
         <div style="display: flex; gap: 10px; align-items: flex-start;">
           <div style="width: 36px; padding: 6px 0; text-align: center; color: var(--dlai-coral); border: 1px solid rgba(246,91,102,0.25); border-radius: var(--radius-sm); flex-shrink: 0;">
@@ -52,7 +52,7 @@
     <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-500); margin: 0 0 8px; font-weight: 600;">Question queue</h2>
     <div id="questions-list">
       {% for q in queue_qs %}
-        <article class="q-card {% if q.state == 'answered' %}q-card-answered{% endif %}" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
+        <article class="q-card {% if q.state == 'answered' %}q-card-answered{% endif %}" id="q-{{ q.id }}" data-question-id="{{ q.id }}" data-upvotes="{{ q.upvote_count }}"
                  style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; transition: box-shadow 200ms ease, transform 200ms ease; cursor: default;">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <div style="width: 44px; padding: 8px 0; text-align: center; color: var(--slate-700); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); flex-shrink: 0;">

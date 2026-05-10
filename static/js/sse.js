@@ -49,7 +49,7 @@
 
     if (isPresenter) {
       // Full presenter card with 4 action buttons
-      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}"
+      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}" data-upvotes="${q.upvote_count}"
         style="background:white;border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;transition:box-shadow 200ms ease,transform 200ms ease;cursor:default;">
         <div style="display:flex;gap:12px;align-items:flex-start;">
           <div style="width:44px;padding:8px 0;text-align:center;color:var(--slate-700);border:1px solid var(--slate-200);border-radius:var(--radius-sm);flex-shrink:0;">
@@ -74,7 +74,7 @@
       </article>`;
     } else {
       // Audience card with upvote button only
-      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}"
+      tmpl.innerHTML = `<article class="q-card ${isNew ? 'q-card-new' : ''}" id="q-${q.id}" data-question-id="${q.id}" data-upvotes="${q.upvote_count}"
         style="background:white;border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
         <div style="display:flex;gap:12px;align-items:flex-start;">
           <button class="upvote-btn" data-action="upvote" data-id="${q.id}"
@@ -97,9 +97,22 @@
   }
 
   function updateCount(qid, count) {
-    const el = document.querySelector('#q-' + qid + ' .upvote-count');
+    const card = document.getElementById('q-' + qid);
+    // Stash the authoritative count on the card BEFORE rollCount kicks off its
+    // 110ms digit animation. flipReorderQueue reads from this attribute so the
+    // reorder happens immediately, even before the textContent visually flips.
+    if (card) card.dataset.upvotes = String(count);
+    const el = card?.querySelector('.upvote-count');
     rollCount(el, count);
     flipReorderQueue();
+  }
+
+  function _cardUpvotes(card) {
+    // Prefer data-upvotes (always fresh); fall back to textContent for cards
+    // that were rendered server-side and never went through updateCount.
+    const ds = parseInt(card.dataset.upvotes ?? '', 10);
+    if (Number.isFinite(ds)) return ds;
+    return parseInt(card.querySelector('.upvote-count')?.textContent || '0', 10);
   }
 
   /* ── FLIP reorder when ranks change — item #10 ───────── */
@@ -112,9 +125,15 @@
       const cards = Array.from(list.querySelectorAll(':scope > .q-card'));
       if (cards.length < 2) return;
       const firstRects = new Map(cards.map(c => [c, c.getBoundingClientRect()]));
+      // Sort: answered cards always last; among the rest, by upvotes desc, then
+      // stable by current index. This mirrors the server-side ordering so the
+      // reorder converges to the same layout the next page-refresh would render.
       const sorted = cards.slice().sort((a, b) => {
-        const av = parseInt(a.querySelector('.upvote-count')?.textContent || '0', 10);
-        const bv = parseInt(b.querySelector('.upvote-count')?.textContent || '0', 10);
+        const aAns = a.classList.contains('q-card-answered') ? 1 : 0;
+        const bAns = b.classList.contains('q-card-answered') ? 1 : 0;
+        if (aAns !== bAns) return aAns - bAns;
+        const av = _cardUpvotes(a);
+        const bv = _cardUpvotes(b);
         if (bv !== av) return bv - av;
         return cards.indexOf(a) - cards.indexOf(b);
       });

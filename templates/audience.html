@@ -68,7 +68,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
     {% set q = pinned_q %}
     {% set upvoted = pinned_q.id in my_upvotes %}
     {% set is_mine = pinned_q.id in my_question_ids %}
-    <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}"
+    <article class="q-card q-card-pinned" id="q-{{ pinned_q.id }}" data-question-id="{{ pinned_q.id }}" data-upvotes="{{ pinned_q.upvote_count }}"
              style="background: white; border: 1px solid rgba(246,91,102,0.35); border-radius: var(--radius-md);
                     padding: 14px; margin-bottom: 0; box-shadow: 0 0 18px rgba(246,91,102,0.18);">
       <div style="display: flex; gap: 12px; align-items: flex-start;">
@@ -102,7 +102,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
       {% set is_mine = q.id in my_question_ids %}
       {% set is_new = false %}
       {% if q.state == 'answered' %}
-      <article class="q-card q-card-answered" id="q-{{ q.id }}" data-question-id="{{ q.id }}"
+      <article class="q-card q-card-answered" id="q-{{ q.id }}" data-question-id="{{ q.id }}" data-upvotes="{{ q.upvote_count }}"
                style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
         <div style="display: flex; gap: 12px; align-items: flex-start;">
           <button class="upvote-btn" data-action="upvote" data-id="{{ q.id }}"
