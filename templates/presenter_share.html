@@ -1,39 +1,195 @@
 {% extends "base.html" %}
 {% block title %}Share — {{ room.title or "Q&A" }} — AskUp{% endblock %}
 {% block body %}
-<header class="app-header">
+
+<!-- Soft background tint so the hero card has lift -->
+<div aria-hidden="true" style="
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(246,91,102,0.10) 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(35,123,148,0.08) 0%, transparent 50%);"></div>
+
+<header class="app-header" style="position:relative;z-index:1;">
   <h1>{{ room.title or "Live Q&A" }}</h1>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <span id="audience-pill" style="font-size:13px;opacity:0.9;display:flex;align-items:center;">
+      <span class="audience-dot" aria-hidden="true"></span><span class="audience-count-num">0</span><span>&nbsp;listening</span>
+    </span>
+  </div>
 </header>
-<main style="max-width: 720px; margin: 32px auto; padding: 0 16px;">
-  <h2 style="margin: 0 0 16px;">Share with your audience</h2>
-  <div style="display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 32px; align-items: start;">
-    <div class="card" style="padding: 20px;">
+
+<main style="max-width:720px;margin:0 auto;padding:32px 16px 24px;position:relative;z-index:1;">
+
+  <p style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--dlai-coral);margin:0 0 8px;text-align:center;">
+    Share to join
+  </p>
+
+  <!-- Hero room code — the visual anchor of the whole page -->
+  <div id="room-code-display" style="
+    font-family:var(--font-mono);
+    font-size:88px;font-weight:700;
+    letter-spacing:10px;
+    color:var(--dlai-coral);
+    text-align:center;
+    line-height:1;
+    margin:0 0 14px;
+    text-shadow:0 1px 0 rgba(246,91,102,0.08);">{{ room.code }}</div>
+
+  <!-- Audience URL right under the code, the next thing eyes go to -->
+  <div style="text-align:center;margin-bottom:28px;">
+    <span style="font-family:var(--font-mono);font-size:18px;color:var(--slate-700);font-weight:500;">
+      askup.site/<span style="color:var(--slate-900);font-weight:700;">{{ room.code }}</span>
+    </span>
+  </div>
+
+  <!-- Hero QR card -->
+  <div class="card" style="
+    padding:28px;
+    display:flex;justify-content:center;align-items:center;
+    background:white;
+    border:1px solid var(--slate-200);
+    border-radius:var(--radius-md);
+    box-shadow:0 12px 40px rgba(15,23,42,0.06);
+    margin-bottom:20px;">
+    <div id="qr-wrap" style="width:100%;max-width:360px;">
       {{ qr_svg|safe }}
     </div>
-    <div>
-      <div style="font-size: 13px; color: var(--slate-500); margin-bottom: 4px;">Room code</div>
-      <div style="font-family: 'SF Mono', monospace; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: var(--dlai-coral); margin-bottom: 16px;">
-        {{ room.code }}
-      </div>
-      <div style="font-size: 13px; color: var(--slate-500); margin-bottom: 4px;">Direct link</div>
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <input type="text" value="{{ audience_url }}" readonly id="aud-url">
-        <button class="btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('aud-url').value)">Copy</button>
-      </div>
-      <div style="font-size: 12px; color: var(--slate-500); margin-bottom: 16px;">
-        Or just say: <strong style="color: var(--slate-900);">"{{ audience_url|replace('https://', '')|replace('http://', '') }}"</strong>
-      </div>
-      <a href="/r/{{ room.code }}/host/qr?t={{ token }}" class="btn-secondary" style="display: inline-block; padding: 10px 16px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); color: var(--slate-900);">
-        ⛶ Show fullscreen QR
-      </a>
-    </div>
   </div>
-  <p class="muted" style="margin-top: 24px;">
-    Bookmark this page — it's your only way back as presenter. Anyone with this URL becomes the host.
+
+  <p class="muted" style="text-align:center;font-size:13px;margin:0 0 28px;">
+    Audience scans this, or types the code at <strong style="color:var(--slate-700);">askup.site</strong>
   </p>
-  <div style="margin-top: 32px; padding: 16px; background: white; border: 1px solid var(--slate-200); border-radius: var(--radius-md); text-align: center;">
-    <p class="muted">Waiting for first question…</p>
-    <a href="/r/{{ room.code }}/host?t={{ token }}&v=live" style="color: var(--dlai-teal);">Switch to live dashboard →</a>
+
+  <!-- Three primary actions, equal weight -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+    <a href="/r/{{ room.code }}/host/qr?t={{ token }}"
+       class="btn-secondary share-action-btn"
+       style="text-align:center;padding:14px 8px;text-decoration:none;color:var(--slate-900);">
+      <div style="font-size:18px;line-height:1;margin-bottom:4px;">⛶</div>
+      <div style="font-size:13px;font-weight:600;">Project</div>
+      <div style="font-size:11px;color:var(--slate-500);margin-top:2px;">Fullscreen QR</div>
+    </a>
+
+    <button type="button"
+            id="copy-link-btn"
+            class="btn-secondary share-action-btn"
+            style="padding:14px 8px;cursor:pointer;">
+      <div style="font-size:18px;line-height:1;margin-bottom:4px;">📋</div>
+      <div style="font-size:13px;font-weight:600;" id="copy-label">Copy link</div>
+      <div style="font-size:11px;color:var(--slate-500);margin-top:2px;" id="copy-sub">Slack / email</div>
+    </button>
+
+    <a href="/r/{{ room.code }}/host?t={{ token }}&v=live"
+       class="btn-primary share-action-btn"
+       style="text-align:center;padding:14px 8px;text-decoration:none;color:white;border:none;">
+      <div style="font-size:18px;line-height:1;margin-bottom:4px;">→</div>
+      <div style="font-size:13px;font-weight:600;">Open dashboard</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px;">Start moderating</div>
+    </a>
   </div>
+
+  <!-- Hidden field used by the copy button -->
+  <input type="text" value="{{ audience_url }}" readonly id="aud-url" style="position:absolute;left:-9999px;">
+
+  <!-- Status: live counter when audience joins -->
+  <div id="join-status" style="
+    text-align:center;
+    padding:14px 16px;
+    background:white;
+    border:1px solid var(--slate-200);
+    border-radius:var(--radius-md);
+    margin-bottom:20px;">
+    <p class="muted" style="margin:0;font-size:14px;" id="join-status-text">
+      Waiting for the first question…
+    </p>
+  </div>
+
+  <!-- Bookmark warning, low-emphasis -->
+  <p class="muted" style="text-align:center;font-size:12px;margin:0;line-height:1.5;">
+    🔖 Bookmark this page — it's your only way back as presenter.
+    Anyone with this URL becomes the host.
+  </p>
 </main>
+
+<style>
+  /* Card-style buttons in the action row */
+  .share-action-btn {
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border:1px solid var(--slate-200);
+    border-radius:var(--radius-md);
+    background:white;
+    transition:transform 140ms var(--easing-in), box-shadow 140ms var(--easing-in);
+    height:auto;min-height:74px;
+    font-family:inherit;
+  }
+  .share-action-btn:hover {
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(15,23,42,0.08);
+  }
+  .share-action-btn.btn-primary {
+    border-color:var(--dlai-coral);
+    background:var(--dlai-coral);
+  }
+  .share-action-btn.btn-primary:hover {
+    background:var(--dlai-coral-deep);
+  }
+
+  /* Make the embedded QR SVG fill its wrapper */
+  #qr-wrap svg { width:100%;height:auto;display:block; }
+
+  /* Tighten the room code on small viewports */
+  @media (max-width: 540px) {
+    #room-code-display { font-size:64px;letter-spacing:6px; }
+  }
+</style>
+
+<script>
+  window.ROOM_CODE = {{ room.code|tojson }};
+  window.PRESENTER_TOKEN = {{ token|tojson }};
+
+  // Copy-to-clipboard with success feedback
+  const copyBtn = document.getElementById('copy-link-btn');
+  const copyLabel = document.getElementById('copy-label');
+  const copySub = document.getElementById('copy-sub');
+  copyBtn.addEventListener('click', async () => {
+    const url = document.getElementById('aud-url').value;
+    try {
+      await navigator.clipboard.writeText(url);
+      copyLabel.textContent = 'Copied!';
+      copySub.textContent = url.replace(/^https?:\/\//, '');
+      copyBtn.style.borderColor = 'var(--dlai-coral)';
+      setTimeout(() => {
+        copyLabel.textContent = 'Copy link';
+        copySub.textContent = 'Slack / email';
+        copyBtn.style.borderColor = 'var(--slate-200)';
+      }, 2000);
+    } catch (e) {
+      copyLabel.textContent = 'Copy failed';
+    }
+  });
+
+  // Surface the live status when audience members join — without forcing the
+  // presenter off this page. The "Open dashboard" CTA highlights itself when
+  // the first question arrives.
+  let questionCount = 0;
+  function bumpQuestionCount() {
+    questionCount++;
+    const status = document.getElementById('join-status-text');
+    if (status) {
+      status.innerHTML = `<strong style="color: var(--slate-900);">${questionCount} question${questionCount === 1 ? '' : 's'}</strong> so far — open the dashboard to moderate.`;
+    }
+    // Pulse the dashboard button on first question
+    if (questionCount === 1) {
+      const dashBtn = document.querySelector('a[href*="v=live"]');
+      if (dashBtn) {
+        dashBtn.animate(
+          [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }],
+          { duration: 600, iterations: 3 }
+        );
+      }
+    }
+  }
+</script>
+
+<script src="/static/js/sse.js?v=2" defer></script>
 {% endblock %}
