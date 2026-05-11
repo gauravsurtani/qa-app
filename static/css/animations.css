@@ -3,7 +3,20 @@
     animation-duration: 100ms !important;
     transition-duration: 100ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
   }
+}
+
+/* ── Page entrance fade (View Transitions fallback) ──────────── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+body:not(.is-home) > main {
+  animation: page-enter 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  body:not(.is-home) > main { animation: none; }
 }
 
 /* ── Rolling digit ────────────────────────────────────────────── */
@@ -24,8 +37,14 @@
 
 /* ── Audience dot pulse ───────────────────────────────────────── */
 @keyframes dot-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(246,91,102,0.7), 0 0 0 0 rgba(246,91,102,0.35); }
-  50%       { box-shadow: 0 0 0 4px rgba(246,91,102,0.3), 0 0 0 8px rgba(246,91,102,0.1); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(246,91,102,0.7), 0 0 0 0 rgba(246,91,102,0.35); opacity: 1; }
+  50%       { box-shadow: 0 0 0 4px rgba(246,91,102,0.3), 0 0 0 8px rgba(246,91,102,0.1); opacity: 0.85; }
+}
+/* Count-change burst — briefly brightens the dot */
+@keyframes dot-count-burst {
+  0%   { background: white; box-shadow: 0 0 0 0 rgba(246,91,102,0.9), 0 0 0 0 rgba(246,91,102,0.5); }
+  35%  { background: rgba(246,91,102,0.9); box-shadow: 0 0 0 6px rgba(246,91,102,0.4), 0 0 0 12px rgba(246,91,102,0.15); }
+  100% { background: white; box-shadow: 0 0 0 0 rgba(246,91,102,0); }
 }
 .audience-dot {
   display: inline-block;
@@ -39,9 +58,14 @@
   top: -1px;
   animation: dot-breathe 2s ease-in-out infinite;
   flex-shrink: 0;
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.audience-dot.dot-burst {
+  animation: dot-count-burst 500ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .audience-dot { animation: none; box-shadow: 0 0 0 2px rgba(246,91,102,0.5); }
+  .audience-dot.dot-burst { animation: none; }
 }
 
 /* ── Header grain texture ─────────────────────────────────────── */
@@ -78,21 +102,49 @@
 
 /* ── New question slide-in ────────────────────────────────────── */
 @keyframes slide-in-top {
-  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  from { opacity: 0; transform: translateY(-16px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)     scale(1); }
 }
 .q-card-new {
-  animation: slide-in-top 280ms var(--easing-in);
+  animation: slide-in-top 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
   border-left: 3px solid var(--dlai-coral);
 }
+/* Stagger support: JS sets --stagger-delay via CSS custom property */
+.q-card-new[style*="--stagger-delay"] {
+  animation-delay: var(--stagger-delay, 0ms);
+}
 
-/* ── Upvote pulse ─────────────────────────────────────────────── */
+/* ── Upvote pulse + radial coral splash ───────────────────────── */
 @keyframes upvote-pulse {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.18); }
+  35%  { transform: scale(1.22); }
+  65%  { transform: scale(0.96); }
   100% { transform: scale(1); }
 }
-.upvote-active { animation: upvote-pulse 220ms var(--easing-in); }
+.upvote-active {
+  animation: upvote-pulse 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Radial coral splash ring — expands from center on upvote-on */
+@keyframes upvote-splash {
+  0%   { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+.upvote-btn {
+  position: relative;
+  overflow: visible;
+}
+.upvote-splash-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+  background: radial-gradient(circle, rgba(246,91,102,0.5) 0%, transparent 70%);
+  pointer-events: none;
+  animation: upvote-splash 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .upvote-splash-ring { animation: none; opacity: 0; }
+}
 
 /* ── Skeleton shimmer ─────────────────────────────────────────── */
 @keyframes shimmer {
@@ -123,15 +175,41 @@ a[href*="qr"]:hover {
   transition: transform 160ms var(--easing-in);
 }
 
+/* ── Card base — hover lift with multi-layer shadow ──────────── */
+.q-card {
+  position: relative;
+  transition:
+    box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 200ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+/* Presenter queue cards get refined hover lift */
+#questions-list .q-card:not(.q-card-answered):hover {
+  border-color: rgba(246, 91, 102, 0.3) !important;
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    0 12px 32px rgba(15, 23, 42, 0.06) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ── Pinned card breathing glow ──────────────────────────────── */
+@keyframes pinned-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(246,91,102,0.18), 0 2px 8px rgba(15,23,42,0.06); }
+  50%       { box-shadow: 0 0 30px rgba(246,91,102,0.34), 0 2px 8px rgba(15,23,42,0.06); }
+}
+
 /* ── Pinned card variant ─────────────────────────────────── */
-.q-card { position: relative; }
 .q-card-pinned {
   padding: 12px !important;
   border: 1px solid rgba(246, 91, 102, 0.3) !important;
-  box-shadow: 0 0 18px rgba(246, 91, 102, 0.18) !important;
+  animation: pinned-glow 3.5s ease-in-out infinite;
   font-size: 14px;
   max-width: 100%;
   overflow-wrap: break-word;
+  transform: none !important;
+}
+.q-card-pinned:hover {
+  border-color: rgba(246, 91, 102, 0.55) !important;
 }
 .q-card-pinned p { font-size: 14px !important; line-height: 1.45 !important; }
 .q-card-pinned .upvote-count { font-size: 13px !important; }
@@ -140,19 +218,32 @@ a[href*="qr"]:hover {
  * The button is still in the DOM, so when SSE moves the card back to the
  * queue (state change to live/answered), the Pin button reappears via CSS. */
 .q-card-pinned [data-act="state"][data-val="pinned"] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .q-card-pinned { animation: none; box-shadow: 0 0 18px rgba(246,91,102,0.22) !important; }
+}
 
-/* ── Answered card variant ───────────────────────────────── */
+/* ── Answered card — smooth fade-to-grey transition ──────────── */
+@keyframes answered-fade {
+  from { opacity: 1; }
+  to   { opacity: 0.5; }
+}
 .q-card-answered {
-  opacity: 0.55;
+  opacity: 0.5;
+  transition: opacity 400ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 .q-card-answered p {
   color: var(--slate-500);
+  transition: color 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Class applied immediately; fade happens via transition */
+.q-card-answering {
+  animation: answered-fade 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 .q-card-answered::before {
   content: "\2713 Answered";
   display: inline-block;
   background: var(--slate-100);
-  color: var(--slate-700);
+  color: var(--slate-500);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
@@ -160,6 +251,7 @@ a[href*="qr"]:hover {
   position: absolute;
   top: 8px;
   right: 8px;
+  letter-spacing: 0.2px;
 }
 
 /* ── Audience pinned slot label ──────────────────────────── */
@@ -170,4 +262,111 @@ a[href*="qr"]:hover {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 8px;
+}
+
+/* ── Pinned slot empty state icon bounce ─────────────────── */
+@keyframes empty-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+.pinned-slot-empty:hover .pinned-empty-icon {
+  animation: empty-bounce 600ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pinned-slot-empty:hover .pinned-empty-icon { animation: none; }
+}
+
+/* ── Character count color shift ─────────────────────────── */
+/* JS adds data-chars attr; these rules do the color transition */
+#char-count {
+  transition: color 200ms cubic-bezier(0.32, 0.72, 0, 1), font-weight 200ms ease;
+}
+#char-count.chars-warning {
+  color: #D97706; /* amber */
+  font-weight: 600;
+}
+#char-count.chars-danger {
+  color: var(--dlai-coral-deep);
+  font-weight: 700;
+}
+
+/* ── Button morph states ─────────────────────────────────── */
+/* Send / Continue / Join: success state morphs to green with scale pop */
+@keyframes btn-success-pop {
+  0%   { transform: scale(0.94); }
+  55%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.btn-success-morph {
+  background: #22C55E !important;
+  animation: btn-success-pop 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-success-morph { animation: none; }
+}
+
+/* ── Pinned slot glow pulse on card arrival ──────────────── */
+@keyframes slot-arrival-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(246,91,102,0.5); }
+  50%  { box-shadow: 0 0 0 8px rgba(246,91,102,0.18); }
+  100% { box-shadow: 0 0 24px rgba(246,91,102,0.18), 0 2px 8px rgba(15,23,42,0.06); }
+}
+.pinned-slot-active.slot-arrived {
+  animation: slot-arrival-pulse 500ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ── Homepage parallax orbs — moved by JS ───────────────── */
+.home-orb {
+  will-change: transform;
+  transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-orb { transition: none; }
+}
+
+/* ── Homepage hero background dotted grid ───────────────── */
+/* Slightly more visible grid on desktop */
+@media (min-width: 768px) {
+  .home-dotgrid {
+    opacity: 0.7 !important;
+    background-size: 28px 28px !important;
+  }
+}
+
+/* ── Share action button icon lift ──────────────────────── */
+.share-action-btn .share-icon {
+  transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+  display: inline-block;
+}
+.share-action-btn:hover .share-icon {
+  transform: translateY(-2px);
+}
+
+/* ── QR fullscreen code glyph pulse ─────────────────────── */
+@keyframes code-settle {
+  0%   { letter-spacing: 16px; opacity: 0; }
+  100% { letter-spacing: 10px; opacity: 1; }
+}
+#qr-code.code-entering {
+  animation: code-settle 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  #qr-code.code-entering { animation: none; opacity: 1; letter-spacing: 10px; }
+}
+
+/* ── Room ended page entrance ────────────────────────────── */
+.room-ended-content {
+  animation: page-enter 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* ── Send button: spinner fade-in ─────────────────────────── */
+@keyframes spin-in {
+  from { opacity: 0; transform: rotate(-90deg) scale(0.7); }
+  to   { opacity: 1; transform: rotate(0) scale(1); }
+}
+.spinner-fade-in {
+  animation: spin-in 180ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner-fade-in { animation: none; opacity: 1; }
 }

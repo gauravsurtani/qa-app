@@ -174,16 +174,33 @@ const sendLabel  = document.getElementById('send-label');
 const sendSpinner = document.getElementById('send-spinner');
 const sendCheck  = document.getElementById('send-check');
 
-ta.addEventListener('input', () => { cc.textContent = `${ta.value.length}/280`; });
+ta.addEventListener('input', () => {
+  const len = ta.value.length;
+  cc.textContent = `${len}/280`;
+  // Color shift: slate (default) → amber (≥200) → coral (≥260)
+  cc.classList.remove('chars-warning', 'chars-danger');
+  if (len >= 260) cc.classList.add('chars-danger');
+  else if (len >= 200) cc.classList.add('chars-warning');
+});
 
 function setSendState(state) {
   // state: 'idle' | 'loading' | 'success'
   sendBtn.disabled = state !== 'idle';
-  sendLabel.style.display  = state === 'idle'    ? '' : 'none';
+  sendLabel.style.display   = state === 'idle'    ? '' : 'none';
   sendSpinner.style.display = state === 'loading' ? 'block' : 'none';
-  sendCheck.style.display  = state === 'success'  ? 'block' : 'none';
-  if (state === 'success') sendBtn.style.background = '#22C55E';
-  else sendBtn.style.background = '';
+  sendCheck.style.display   = state === 'success' ? 'block' : 'none';
+
+  if (state === 'success') {
+    sendBtn.classList.add('btn-success-morph');
+    sendBtn.style.background = '';
+  } else {
+    sendBtn.classList.remove('btn-success-morph');
+    sendBtn.style.background = '';
+  }
+  if (state === 'loading') {
+    // Fade spinner in
+    sendSpinner.firstElementChild?.classList.add('spinner-fade-in');
+  }
 }
 
 composer.addEventListener('submit', async (e) => {
@@ -213,7 +230,7 @@ composer.addEventListener('submit', async (e) => {
 });
 </script>
 <script src="/static/js/avatar.js?v=2" defer></script>
-<script src="/static/js/upvote.js?v=2" defer></script>
-<script src="/static/js/sse.js?v=2" defer></script>
+<script src="/static/js/upvote.js?v=3" defer></script>
+<script src="/static/js/sse.js?v=3" defer></script>
 {% endif %}
 {% endblock %}

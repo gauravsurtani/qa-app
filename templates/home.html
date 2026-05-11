@@ -5,18 +5,18 @@
 
 <!-- Decorative background -->
 <div aria-hidden="true" style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
-  <div style="
+  <div id="orb-coral" class="home-orb" style="
     position:absolute;top:-180px;left:-120px;
     width:520px;height:520px;border-radius:50%;
     background:radial-gradient(circle, rgba(246,91,102,0.22) 0%, transparent 70%);
     filter:blur(80px);"></div>
-  <div style="
+  <div id="orb-teal" class="home-orb" style="
     position:absolute;bottom:-140px;right:-100px;
     width:440px;height:440px;border-radius:50%;
     background:radial-gradient(circle, rgba(35,123,148,0.18) 0%, transparent 70%);
     filter:blur(80px);"></div>
   <!-- Dotted grid -->
-  <div style="
+  <div class="home-dotgrid" style="
     position:absolute;inset:0;
     background-image:radial-gradient(rgba(15,23,42,0.07) 1px, transparent 1px);
     background-size:24px 24px;
@@ -159,6 +159,35 @@
     }
   });
 
+  // ── Parallax orbs on mouse-move ─────────────────────────────────────────
+  (function () {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+    const orbCoral = document.getElementById('orb-coral');
+    const orbTeal  = document.getElementById('orb-teal');
+    let rafId = 0;
+    let targetX = 0, targetY = 0;
+    let currentX = 0, currentY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      targetX = (e.clientX - cx) / cx;
+      targetY = (e.clientY - cy) / cy;
+    });
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function tick() {
+      currentX = lerp(currentX, targetX, 0.06);
+      currentY = lerp(currentY, targetY, 0.06);
+      if (orbCoral) orbCoral.style.transform = `translate(${currentX * 24}px, ${currentY * 20}px)`;
+      if (orbTeal)  orbTeal.style.transform  = `translate(${-currentX * 18}px, ${-currentY * 16}px)`;
+      rafId = requestAnimationFrame(tick);
+    }
+    tick();
+  })();
+
   // ── Start form ───────────────────────────────────────────────────────────
   const startForm  = document.getElementById('start-form');
   const startBtn   = document.getElementById('start-btn');
@@ -177,7 +206,8 @@
     startLabel.style.display = 'none';
     startSpinner.style.display = 'none';
     startCheck.style.display = 'block';
-    startBtn.style.background = '#22C55E';
+    startBtn.classList.add('btn-success-morph');
+    startBtn.style.background = '';
   }
 
   startForm.addEventListener('submit', async (e) => {

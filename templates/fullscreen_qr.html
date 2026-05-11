@@ -115,7 +115,14 @@ window.addEventListener('load', function () {
   setTimeout(() => {
     show(subtitle, 0);
     if (!reduced) setTimeout(() => subtitle.classList.add('qr-subtitle-visible'), 400);
-    show(codeEl, 0);
+    // Code settling animation — expands letter-spacing from wide to normal
+    if (codeEl && !reduced) {
+      codeEl.style.opacity = '1';
+      codeEl.style.transform = 'translateY(0)';
+      codeEl.classList.add('code-entering');
+    } else {
+      show(codeEl, 0);
+    }
     show(urlEl, 0);
   }, reduced ? 0 : 320);
 });

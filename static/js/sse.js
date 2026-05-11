@@ -43,6 +43,22 @@
     }, 110);
   }
 
+  /* ── Stagger batch helper ───────────────────────────────── */
+  // Holds question IDs queued within a 200ms window for staggered entrance
+  let _staggerQueue = [];
+  let _staggerTimer = 0;
+  const STAGGER_WINDOW = 200; // ms
+  const STAGGER_STEP   = 40;  // ms between cards
+
+  function flushStaggerQueue() {
+    _staggerTimer = 0;
+    _staggerQueue.forEach((card, i) => {
+      if (i === 0) return; // first card has no delay
+      card.style.setProperty('--stagger-delay', `${i * STAGGER_STEP}ms`);
+    });
+    _staggerQueue = [];
+  }
+
   function appendQuestion(q, isNew) {
     if (!list || document.getElementById('q-' + q.id)) return;
     const tmpl = document.createElement('template');
@@ -94,6 +110,13 @@
     el.querySelector('p').textContent = q.text;
     el.querySelector('.author').textContent = q.author_name;
     list.prepend(el);
+
+    // Stagger grouping
+    if (isNew) {
+      _staggerQueue.push(el);
+      if (_staggerTimer) clearTimeout(_staggerTimer);
+      _staggerTimer = setTimeout(flushStaggerQueue, STAGGER_WINDOW);
+    }
   }
 
   function updateCount(qid, count) {
@@ -164,7 +187,11 @@
       const card = document.getElementById('q-' + data.id);
       if (!card) return;
 
-      // Apply / strip answered styling
+      // Apply / strip answered styling — use transition class for smooth fade
+      if (data.state === 'answered' && !card.classList.contains('q-card-answered')) {
+        card.classList.add('q-card-answering');
+        setTimeout(() => card.classList.remove('q-card-answering'), 420);
+      }
       card.classList.toggle('q-card-answered', data.state === 'answered');
 
       if (data.state === 'hidden') {
@@ -190,6 +217,11 @@
         slot.classList.add('pinned-slot-active');
         card.classList.add('q-card-pinned');
         flipMove(card, slot, false);
+        // Slot arrival pulse
+        slot.classList.remove('slot-arrived');
+        void slot.offsetWidth;
+        slot.classList.add('slot-arrived');
+        setTimeout(() => slot.classList.remove('slot-arrived'), 520);
         return;
       }
 
@@ -201,7 +233,7 @@
         if (!slot.querySelector('.q-card')) {
           slot.classList.remove('pinned-slot-active');
           slot.classList.add('pinned-slot-empty');
-          slot.innerHTML = '<p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>';
+          slot.innerHTML = '<span class="pinned-empty-icon" style="font-size:22px;display:block;line-height:1;margin-bottom:6px;" aria-hidden="true">📌</span><p class="muted" style="margin:0;font-size:13px;font-style:italic;line-height:1.4;">Pin a question to<br>highlight it here.</p>';
         }
         return;
       }
@@ -215,7 +247,7 @@
           if (slot && !slot.querySelector('.q-card')) {
             slot.classList.remove('pinned-slot-active');
             slot.classList.add('pinned-slot-empty');
-            slot.innerHTML = '<p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>';
+            slot.innerHTML = '<span class="pinned-empty-icon" style="font-size:22px;display:block;line-height:1;margin-bottom:6px;" aria-hidden="true">📌</span><p class="muted" style="margin:0;font-size:13px;font-style:italic;line-height:1.4;">Pin a question to<br>highlight it here.</p>';
           }
         } else if (list && list.contains(card)) {
           // Move within the queue to the bottom
@@ -242,6 +274,15 @@
           const label = document.createElement('span');
           label.textContent = ' listening';
           pill.appendChild(label);
+        }
+        // Burst the dot brighter momentarily on count change
+        const prevCount = parseInt(countEl.textContent || '0', 10);
+        if (data.count !== prevCount) {
+          dot.classList.remove('dot-burst');
+          // force reflow so the animation re-triggers
+          void dot.offsetWidth;
+          dot.classList.add('dot-burst');
+          setTimeout(() => dot.classList.remove('dot-burst'), 520);
         }
         rollCount(countEl, data.count);
       }

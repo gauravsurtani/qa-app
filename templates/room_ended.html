@@ -2,7 +2,13 @@
 {% block title %}Q&A ended — AskUp{% endblock %}
 {% block body %}
 <main style="max-width: 480px; margin: 96px auto; padding: 0 16px; text-align: center;">
-  <h1>This Q&amp;A has ended</h1>
-  <p class="muted">Thanks for joining {{ room.title or "the session" }}.</p>
+  <div class="room-ended-content">
+    <div style="font-size: 44px; margin-bottom: 16px; line-height: 1;" aria-hidden="true">✓</div>
+    <h1 style="margin: 0 0 8px; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; color: var(--slate-900);">This Q&amp;A has ended</h1>
+    <p class="muted" style="margin: 0 0 24px; font-size: 16px; line-height: 1.5;">Thanks for joining <strong style="color: var(--slate-700);">{{ room.title or "the session" }}</strong>.</p>
+    <a href="/" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; color: white;">
+      Start your own →
+    </a>
+  </div>
 </main>
 {% endblock %}

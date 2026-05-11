@@ -43,8 +43,9 @@
       </article>
     </div>
     {% else %}
-    <div id="pinned-slot" class="card pinned-slot-empty" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in);">
-      <p class="muted" style="margin: 0; font-size: 14px; font-style: italic;">Pin a question to highlight it here.</p>
+    <div id="pinned-slot" class="card pinned-slot-empty" style="min-height: 120px; transition: box-shadow 320ms var(--easing-in), border-color 320ms var(--easing-in); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px;">
+      <span class="pinned-empty-icon" style="font-size: 22px; display: block; line-height: 1;" aria-hidden="true">📌</span>
+      <p class="muted" style="margin: 0; font-size: 13px; font-style: italic; line-height: 1.4;">Pin a question to<br>highlight it here.</p>
     </div>
     {% endif %}
   </aside>
@@ -221,5 +222,5 @@ async function endSession() {
 <script src="/static/js/toast.js?v=2" defer></script>
 <script src="/static/js/avatar.js?v=2" defer></script>
 <script src="/static/js/shortcuts.js?v=2" defer></script>
-<script src="/static/js/sse.js?v=2" defer></script>
+<script src="/static/js/sse.js?v=3" defer></script>
 {% endblock %}
