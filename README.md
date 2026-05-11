@@ -93,8 +93,13 @@ This whole project was built using a **brainstorm → spec → plan → execute*
 | **4. Execute** | git log | 52+ atomic commits, each shipping one task with passing tests |
 | **5. Polish** | iterative design passes | Motion One animations, custom modals, FLIP transitions, premium typography, gradient avatars |
 | **6. Deploy** | Railway + Hostinger | Custom domain, ALIAS apex DNS, auto-deploy on git push |
+| **7. Reflect** | [`docs/LESSONS.md`](docs/LESSONS.md) | 5 lessons: brainstorm > coding, SSE > WebSockets, HTMX + vanilla beats SPA, Cache-Control gotcha, motion > "works" |
 
 The spec and plan are committed — read them to see exactly how a Q&A app gets reasoned about from scratch.
+
+### Want to make your own demo video?
+
+[`docs/DEMO_VIDEO_SCRIPT.md`](docs/DEMO_VIDEO_SCRIPT.md) has a tight 90-second script + shot list + narration. Record with Loom or QuickTime in ~15 minutes.
 
 ---
 

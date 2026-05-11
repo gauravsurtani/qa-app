@@ -4,12 +4,19 @@ Paste any of the three versions below into Slack. They use Slack-flavored
 formatting (`*bold*`, `_italic_`, `<url|text>` links, ``` for code) so they'll
 render correctly with no editing.
 
+> **Heads up:** the five "lessons learned" referenced in Version C are now the
+> canonical version in [`docs/LESSONS.md`](LESSONS.md). The Slack-thread copy
+> here stays as-is so you can paste it without modification, but anyone reading
+> the README will be sent to the markdown file.
+
 ---
 
 ## Version A — short hook with the "why" (one Slack message) — **recommended**
 
 ```
-:tada: I built *AskUp* — a free live Q&A tool for talks, AMAs, and events.
+:tada: Introducing *AskUp ▲* — a free live Q&A tool for talks, AMAs, and events.
+
+:link: <https://askup.site|askup.site>  ·  :open_file_folder: <https://github.com/gauravsurtani/qa-app|github.com/gauravsurtani/qa-app>
 
 *Why I built it:*
 We host events and the same friction kept showing up during Q&A:
@@ -28,10 +35,10 @@ We host events and the same friction kept showing up during Q&A:
 
 End result: less wasted time, the questions that _actually mattered_ get answered.
 
-:link: Try it: <https://askup.site|askup.site> → tell your audience: _"askup.site — code XYZ123"_
-:open_file_folder: Repo + full design doc: <https://github.com/gauravsurtani/qa-app|gauravsurtani/qa-app>
+*Try it now:* open <https://askup.site|askup.site>, click _Start a session_, and share the 6-char code with anyone. Audience just visits `askup.site/<code>`.
 
 Built end-to-end this weekend: FastAPI + SQLite + SSE on Railway. No accounts, no fluff.
+Full design + plan + five build lessons live in the repo: <https://github.com/gauravsurtani/qa-app/blob/master/docs/LESSONS.md|docs/LESSONS.md>.
 
 Made with :heart: by <https://www.linkedin.com/in/gaurav-surtani/|Gaurav>
 ```
