@@ -6,23 +6,34 @@ render correctly with no editing.
 
 ---
 
-## Version A — short hook (one Slack message)
+## Version A — short hook with the "why" (one Slack message) — **recommended**
 
 ```
-:tada: I built *AskUp* — a free live Q&A tool for presentations.
+:tada: I built *AskUp* — a free live Q&A tool for talks, AMAs, and events.
 
-Audience scans a QR or types `askup.site/<code>`, drops their name once, asks
-questions, upvotes the ones they want answered. Presenter sees everything in
-real time and picks what to answer.
+*Why I built it:*
+We host events and the same friction kept showing up during Q&A:
+ • Way too much time spent on questions — and rarely the right ones
+ • The same loud voices asking the same wildcards
+ • No way to remember what was actually asked once the talk ended
+ • No signal for what the _audience_ actually wanted answered
 
-:link: Try it: <https://askup.site|askup.site>
-:open_file_folder: Repo: <https://github.com/gauravsurtani/qa-app|gauravsurtani/qa-app>
+*How AskUp fixes it:*
+ • Audience scans a QR or types `askup.site/<code>` — no signup, no app install
+ • Everyone's questions land in one feed
+ • Audience _upvotes_ the ones they want answered — the room's real signal rises to the top
+ • Presenter pins "Answering Now," marks done, or hides irrelevant questions
+ • Moderators get power; the audience gets a real voice; nothing gets forgotten
+ • Every question is saved + exportable as CSV — you walk away with a record
 
-Built end-to-end in one weekend with brainstorm → spec → plan → execute.
-Stack: FastAPI + SQLite + SSE + Jinja/HTMX + Motion One on Railway. No
-accounts, no apps, just share a link.
+End result: less wasted time, the questions that _actually mattered_ get answered.
 
-Use it for your next AMA, all-hands, or talk and let me know how it goes :raised_hands:
+:link: Try it: <https://askup.site|askup.site> → tell your audience: _"askup.site — code XYZ123"_
+:open_file_folder: Repo + full design doc: <https://github.com/gauravsurtani/qa-app|gauravsurtani/qa-app>
+
+Built end-to-end this weekend: FastAPI + SQLite + SSE on Railway. No accounts, no fluff.
+
+Made with :heart: by <https://www.linkedin.com/in/gaurav-surtani/|Gaurav>
 ```
 
 ---
