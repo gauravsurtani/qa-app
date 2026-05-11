@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ room.title or "Q&A" }} — AskUp{% endblock %}
+{% block body_class %}{% if not needs_join %}has-fixed-bottom-bar{% endif %}{% endblock %}
 {% block body %}
 <header class="app-header">
   <h1>{{ room.title or "Live Q&A" }}</h1>
@@ -181,6 +182,19 @@ ta.addEventListener('input', () => {
   cc.classList.remove('chars-warning', 'chars-danger');
   if (len >= 260) cc.classList.add('chars-danger');
   else if (len >= 200) cc.classList.add('chars-warning');
+});
+
+// Enter sends, Shift+Enter inserts a newline (chat-style).
+// Without this, textareas don't trigger form submit on Enter at all.
+ta.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    if (typeof composer.requestSubmit === 'function') {
+      composer.requestSubmit();
+    } else {
+      composer.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+  }
 });
 
 function setSendState(state) {

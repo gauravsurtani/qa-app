@@ -98,22 +98,33 @@ input::placeholder, textarea::placeholder { color: var(--slate-400); }
   font-size: 13px;
 }
 
-/* Sticky-footer layout for the homepage. Body becomes a flex column whose main
- * content grows to fill, pushing the footer to the bottom of the viewport when
- * content is short. position:fixed decorations don't participate in flex, so
- * the gradient orbs and dotted grid still cover the full viewport. */
-body.is-home {
+/* Sticky-footer layout. Body is a flex column on every page whose <main>
+ * grows to fill, pushing the footer to the bottom of the viewport when
+ * content is short. position:fixed decorations don't participate in flex,
+ * so background orbs / grids still cover the full viewport.
+ *
+ * Pages whose primary surface already pins something to the viewport bottom
+ * (audience-joined view: fixed composer) opt out by setting body.has-fixed-
+ * bottom-bar — the footer hides there because stacking it on top of a
+ * composer is visually noisy. The "Made with ♥" credit is still visible
+ * on the join screen and on every refresh of the audience URL. */
+body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
-body.is-home > main {
+body > main {
   flex: 1;
+}
+body.is-home > main {
   margin-top: 72px;   /* preserve existing breathing room above the hero */
-  margin-bottom: 24px; /* small gap before the footer */
+  margin-bottom: 24px;
 }
 body.is-home > .app-footer {
   padding: 24px 16px 32px;
+}
+body.has-fixed-bottom-bar > .app-footer {
+  display: none;
 }
 .app-footer .heart {
   color: var(--dlai-coral);
