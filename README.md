@@ -62,4 +62,3 @@ uv run pytest tests/e2e
 ## Credits
 
 Made by **[Gaurav Surtani](https://www.linkedin.com/in/gaurav-surtani/)** with ♥.
-Coral palette borrowed from the DeepLearning.AI brand system.
