@@ -4,6 +4,14 @@
 
 **[Try it → askup.site](https://askup.site)**  ·  Tell your audience: _"askup.site — code XYZ123"_
 
+| Presenter dashboard (desktop) | Audience (mobile) |
+| :---: | :---: |
+| ![Presenter dashboard](docs/img/presenter.png) | ![Audience view](docs/img/audience.png) |
+
+| Share screen — projectable QR | Fullscreen projector mode |
+| :---: | :---: |
+| ![Share screen](docs/img/share.png) | ![Fullscreen QR](docs/img/fullscreen_qr.png) |
+
 ---
 
 ## What it does
