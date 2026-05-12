@@ -25,10 +25,6 @@ Open <http://localhost:8000> and click **Start a session**.
 
 Requires Python 3.12 and [uv](https://github.com/astral-sh/uv).
 
-## Tech
-
-FastAPI + SQLite + Server-Sent Events + Jinja2/HTMX + Motion One. ~300 lines of vanilla JS, no build step, deploys as a single container.
-
 ## Deploy (Railway)
 
 1. New service from this repo.
@@ -48,16 +44,6 @@ E2E (optional):
 uv run playwright install chromium
 uv run pytest tests/e2e
 ```
-
-## Docs
-
-| | |
-|-|-|
-| [Design spec](docs/superpowers/specs/2026-05-07-qa-app-design.md) | every product decision argued, 15 sections |
-| [Implementation plan](docs/superpowers/plans/2026-05-08-qa-app-implementation.md) | 28 TDD tasks |
-| [Lessons learned](docs/LESSONS.md) | 5 things from the build |
-| [Demo video script](docs/DEMO_VIDEO_SCRIPT.md) | 90-second walkthrough |
-| [Slack announcement](docs/SLACK_ANNOUNCEMENT.md) | copy/paste ready |
 
 ## Credits
 
